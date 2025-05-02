@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Role</title>
+    <style>
+        body { font-family: Arial; text-align: center; margin-top: 100px; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h2>Select Your Role</h2>
+    <button onclick="selectRole('freelancer')">Freelancer</button>
+    <button onclick="selectRole('client')">Client</button>
+    <button onclick="selectRole('admin')">Admin</button>
+
+    <script>
+        async function selectRole(role) {
+            const token = localStorage.getItem('access');
+            if (!token) {
+                alert('Please login first');
+                window.location.href = "/accounts/login/";
+                return;
+            }
+
+            // Save role to user model
+            const roleResponse = await fetch('http://localhost:8000/accounts/role-selection/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role })
+            });
+
+            if (!roleResponse.ok) {
+                const data = await roleResponse.json();
+                alert("Error: " + JSON.stringify(data));
+                return;
+            }
+
+            // ✅ Verify access by calling protected API
+            let verifyURL = '';
+            let dashboardRedirect = '';
+
+            if (role === 'freelancer') {
+                verifyURL = 'http://localhost:8000/accounts/dashboard/freelancer/api';
+                dashboardRedirect = '/accounts/dashboard/freelancer/';
+            } else if (role === 'client') {
+                verifyURL = 'http://localhost:8000/accounts/dashboard/client/api';
+                dashboardRedirect = '/accounts/dashboard/client/';
+            }
+
+            const response = await fetch(verifyURL, {
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            });
+
+            if (response.ok) {
+                window.location.href = dashboardRedirect;
+            } else {
+                alert("Unauthorized! You are not allowed to access this dashboard.");
+            }
+        }
+    </script>
+</body>
+</html>

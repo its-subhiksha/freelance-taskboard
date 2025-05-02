@@ -1,0 +1,20 @@
+<h2>Create a Task</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="text" name="title" placeholder="Task Title" required><br><br>
+
+    <textarea name="description" placeholder="Task Description" required></textarea><br><br>
+
+    <input type="date" name="deadline" required><br><br>
+
+    <input type="file" name="attachment"><br><br>
+
+    <input type="email" name ="client_email" placeholder="Client Email" required><br><br>
+    
+    <button type="submit">Create Task</button>
+</form>
+
+{% if error %}
+<p style="color: red;">{{ error }}</p>
+{% endif %}

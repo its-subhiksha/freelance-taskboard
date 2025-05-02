@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <style>
+        body { font-family: Arial; padding: 40px; }
+        .dashboard-boxes { display: flex; gap: 20px; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+{% if user.is_authenticated %}
+    <h2>Welcome {{ user.username }} 👋</h2>
+    <a href="/accounts/logout/">Logout</a>
+
+    <div class="dashboard-boxes">
+        <button onclick="goToFreelancer()">Freelancer Section</button>
+        <button onclick="goToClient()">Client Section</button>
+    </div>
+
+    <script>
+        function goToFreelancer() {
+            window.location.href = "/accounts/freelancer/dashboard/";
+        }
+
+        function goToClient() {
+            window.location.href = "/accounts/client/dashboard/";
+        }
+    </script>
+
+{% else %}
+    <script>
+        alert("You are not logged in");
+        window.location.href = "/accounts/login/";
+    </script>
+{% endif %}
+
+</body>
+</html>
