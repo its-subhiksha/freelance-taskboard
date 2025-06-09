@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+{% block title %}Task Detail{% endblock %}
+{% block heading %}{{ task.title }}{% endblock %}
+
+{% block content %}
+<style>
+.task-container {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+.task-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+.meta-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14.5px;
+    color: #444;
+    margin-bottom: 20px;
+}
+.meta-stacked strong {
+    color: #222;
+    font-weight: 600;
+}
+.badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+.attachment-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid #e5e7eb;
+}
+.tabs {
+    display: flex;
+    gap: 24px;
+    margin-top: 32px;
+    border-bottom: 2px solid #eee;
+}
+.tab {
+    padding: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.tab.active {
+    border-bottom: 3px solid #7c3aed;
+    color: #4c1d95;
+}
+.subtask-section {
+    margin-top: 24px;
+}
+.badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.badge-in-progress {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.badge-completed {
+    background: #dcfce7;
+    color: #065f46;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.revision-card {
+    background: #f9f9fc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: all 0.2s ease;
+}
+.revision-bubble::before {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 30px;
+    width: 0;
+    height: 0;
+    border: 8px solid transparent;
+    border-top-color: #f9f9fc;
+}
+.description-box {
+    background: #f1f5f9;
+    padding: 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+    font-size: 14px;
+    color: #333;
+}
+.revision-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.revision-user {
+    font-weight: 600;
+    font-size: 14px;
+    background: #ede9fe;
+    color: #7c3aed;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+.revision-time {
+    font-size: 13px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.revision-comment {
+    font-size: 15.5px;
+    color: #333;
+    line-height: 1.6;
+    margin-top: 6px;
+    padding-left: 2px;
+}
+.revision-status {
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    background: #fef9c3;
+    color: #92400e;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+a:hover {
+  opacity: 0.85;
+}
+.scroll-area {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 4px;
+  }
+
+  .scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-area::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+
+  
+  .alert.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.alert.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.alert.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+.alert.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+</style>
+
+<div class="task-container">
+
+    {% if messages %}
+        <div class="messages" style="margin-bottom: 20px;">
+            {% for message in messages %}
+            <div class="alert {{ message.tags }}" style="padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="scroll-area">
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'tasks:client_tasks' %}" 
+        style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: flex; align-items: center;">
+        <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
+            <path d="M11 2 5 8l6 6"/>
+        </svg>
+        Back to My Tasks
+        </a>
+    </div>
+    <!-- Back to My Tasks -->
+    <div class="top-icons" style="position: absolute; top: 32px; right: 32px; display: flex; gap: 14px; font-size: 18px;">
+        <a href="{% url 'interactions:task_notes' task.id %}?from=client" title="Notes" style="text-decoration:none; color:inherit;">📝</a>
+        <a href="{% url 'interactions:task_chat' task.id %}?from=client" title="Chat" style="text-decoration:none; color:inherit;">💬</a>
+    </div>
+
+    <div class="task-title">{{ task.title }}</div>
+
+    <div class="meta-stacked">
+        <div><strong>Status:</strong> <span class="badge">{{ task.get_status_display }}</span></div>
+        <div><strong>Due Date:</strong> {{ task.deadline }}</div>
+        <div><strong>Freelancer:</strong> {{ task.freelancer.username|default:"N/A" }}</div>
+        <div><strong>Created:</strong> {{ task.created_at|date:"d M Y" }}</div>
+    </div>
+
+    <h4>Description</h4>
+    <div class="description-box">{{ task.description }}</div>
+
+    <h4 style="margin-top: 32px;">Attachments</h4>
+    <div class="attachments">
+        {% for attachment in task.attachements.all %}
+        <div class="attachment-item">
+            📎 <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.original_name }}</a>
+        </div>
+        {% empty %}
+        <div style="color: #999;">No attachments uploaded yet.</div>
+        {% endfor %}
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="toggleTab('subtasks')">Subtasks</div>
+        <div class="tab" onclick="toggleTab('revision')">Request Revisions</div>
+    </div>
+
+    <div id="subtasks" class="subtask-section">
+        {% if task.subtasks.all %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background:#f3f4f6;">
+                        <th style="padding:10px; text-align:left;">Name</th>
+                        <th style="padding:10px; text-align:left;">Description</th>
+                        <th style="padding:10px; text-align:left;">Due Date</th>
+                        <th style="padding:10px; text-align:left;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subtask in task.subtasks.all %}
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:10px;">{{ subtask.title }}</td>
+                        <td style="padding:10px;">{{ subtask.description|default:"—" }}</td>
+                        <td style="padding:10px;">{{ subtask.due_date|date:"d M Y"|default:"—" }}</td>
+                        <td style="padding:10px;">
+                            {% if subtask.status == 'pending' %}<span class="badge-pending">⏳ Pending</span>{% endif %}
+                            {% if subtask.status == 'in_progress' %}<span class="badge-in-progress">🛠 In Progress</span>{% endif %}
+                            {% if subtask.status == 'completed' %}<span class="badge-completed">✅ Completed</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div style="color:#999; font-size: 14px;">No subtasks found.</div>
+        {% endif %}
+    </div>
+
+    
+    <div id="revision" class="subtask-section" style="display:none;">
+        {% if revision_requests %}
+            {% for revision in revision_requests %}
+                <div class="revision-card revision-bubble">
+                    {% if revision.status == 'pending' %}
+                        <div class="revision-status">⏳ Pending</div>
+                    {% elif revision.status == 'completed' %}
+                        <div class="revision-status" style="background:#dcfce7; color:#065f46;">✅ Completed</div>
+                    {% endif %}
+                    
+                    <div class="revision-header">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span>👤 {{ task.client.username|default:"N/A" }}</span>
+                        </div>
+                        <span class="revision-time">🕒 {{ revision.created_at|date:"d M Y H:i" }}</span>
+                    </div>
+                    <div class="revision-comment">{{ revision.comment }}</div>
+                </div>
+
+                <!-- {% if revision.status == 'pending' %}
+                    <div class="revision-status">⏳ Pending</div>
+                {% elif revision.status == 'addressed' %}
+                    <div class="revision-status" style="background:#dcfce7; color:#065f46;">✅ Addressed</div>
+                {% endif %} -->
+            {% endfor %}
+    
+        {% else %}
+            <div style="color:#999; font-size: 14px;">No revision requests found.</div>
+        {% endif %}
+    </div>
+
+    {% if task.status == 'under_review' %}
+    <div style="margin-top: 40px; display: flex; justify-content: flex-end; gap: 14px;">
+        <button onclick="openRevisionModal()" style="padding: 10px 18px; border: 2px solid #7c3aed; background: white; color: #7c3aed; border-radius: 8px; font-weight: 600; cursor: pointer;">
+            📝 Request Revision
+        </button>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="approve">
+            <button type="submit" style="padding: 10px 18px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                ✅ Approve Task
+            </button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Revision Modal -->
+    <div id="revisionModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+        <div style="background:#fff; max-width:500px; margin:80px auto; padding:24px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,0.2);">
+            <h3 style="margin-bottom:12px;">Request Revision</h3>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="request_revision">
+                <textarea name="revision_comment" placeholder="Enter revision comments..." style="width:100%; height:120px; padding:12px; border-radius:8px; border:1px solid #ddd; font-size:15px;"></textarea>
+                <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" onclick="closeRevisionModal()" style="padding:8px 14px; background:#f3f4f6; border:none; border-radius:6px;">Cancel</button>
+                    <button type="submit" style="padding:8px 14px; background:#7c3aed; color:white; border:none; border-radius:6px;">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</div>
+
+<script>
+function toggleTab(tabId) {
+    ['subtasks', 'revision'].forEach(id => {
+        document.getElementById(id)?.style?.setProperty('display', id === tabId ? 'block' : 'none');
+    });
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function openRevisionModal() {
+    document.getElementById("revisionModal").style.display = "block";
+}
+function closeRevisionModal() {
+    document.getElementById("revisionModal").style.display = "none";
+}
+</script>
+{% endblock %}

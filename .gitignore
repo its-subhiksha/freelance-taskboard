@@ -1,2 +1,3 @@
 freelancenv/
 __pycache__/
+.env/

@@ -7,40 +7,58 @@ from celery import shared_task
 import re,os,subprocess
 import pandas as pd
 from django.conf import settings
+import socket
 
 
 class AuthtokenGenerator:
     def __init__(self, token_type, user_id=None):
         self.user_id = user_id
         self.token_type = token_type
-        self.token = ''.join(random.choices(string.ascii_letters + string.digits, k=64))
-    
-    def IssueAuthToken(self):
-        if self.user_id:
-            user = CustomUser.objects.get(id=self.user_id)
+        self.token = self._generate_token()
+
+    def _generate_token(self):
+        return ''.join(random.choices(string.ascii_letters + string.digits, k=64))
+
+    def get_token(self):
+        return self.token
+
+    def get_token_expiry_time(self):
+        token_choice = {1: 2, 2: 3, 3: 5, 4: 10}
+        if self.token_type == 1:
+            return timezone.now() + timezone.timedelta(days=token_choice[self.token_type])
+        else:
+            return timezone.now() + timezone.timedelta(minutes=token_choice[self.token_type])
+
+    def issue_new_token(self):
+        """Create and return a new token row in DB"""
+        user = None
+        try:
+            if self.user_id:
+                user = CustomUser.objects.get(id=self.user_id)
+        except CustomUser.DoesNotExist:
+            user = None
 
         auth_token = AuthTokens.objects.create(
-            user = user,
-            token = self.token,
-            auth_type = self.token_type,
-            is_valid = True,
-            expires_on = self.get_token_expiry_time(self.token_type)
+            user=user,
+            token=self.token,
+            auth_type=self.token_type,
+            is_valid=True,
+            expires_on=self.get_token_expiry_time()
         )
-
         return auth_token.token
-    
-    def get_token_expiry_time(self, token_type):
-        
-        token_choice = {1:2, 2:3, 3:5, 4:10}
-        if token_type == 1:
-            return timezone.now() + timezone.timedelta(days=token_choice[token_type])
-        
-        else:
-            return timezone.now() + timezone.timedelta(minutes=token_choice[token_type])
+
+    def update_existing_token(self, auth_token_obj):
+        """Update an existing token object with new token & expiry"""
+        auth_token_obj.token = self.token
+        auth_token_obj.expires_on = self.get_token_expiry_time()
+        auth_token_obj.is_valid = True
+        auth_token_obj.save()
+        return auth_token_obj.token
 
 def AuthTokenValidator(token,expected_type):
     try:
         token_obj = AuthTokens.objects.get(token=token, auth_type=expected_type)
+        print("Token object: ", token_obj)
 
     except AuthTokens.DoesNotExist:
         print("Token does not exist")
@@ -49,6 +67,9 @@ def AuthTokenValidator(token,expected_type):
     if not token_obj.is_valid_token() or token_obj.auth_type != expected_type:
         print("Token is not valid")
         return None
+    
+    print("Token validity:", token_obj.is_valid_token())
+    print("Token status:", token_obj.auth_type, token_obj.token)
     
     return token_obj
 
@@ -88,7 +109,14 @@ def isnt_temp_domain(domain):
         if mid == 0:
             return True
 
+# def is_ping_valid(domain):
+#     print("comes under ping")
+#     subprocess_method = '-n' if os.getenv('OSX')=='WIN' else '-c'
+#     return subprocess.call(['ping', subprocess_method, '1', domain]) == 0
+
 def is_ping_valid(domain):
-    print("comes under ping")
-    subprocess_method = '-n' if os.getenv('OSX')=='WIN' else '-c'
-    return subprocess.call(['ping', subprocess_method, '1', domain]) == 0
+    try:
+        socket.gethostbyname(domain)
+        return True
+    except socket.gaierror:
+        return False

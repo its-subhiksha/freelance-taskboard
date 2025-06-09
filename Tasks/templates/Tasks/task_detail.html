@@ -1,0 +1,613 @@
+{% extends 'base.html' %}
+{% load extras %}
+
+{% block title %}Task Detail{% endblock %}
+{% block heading %}{{ task.title }}{% endblock %}
+
+{% block content %}
+<style>
+.task-container {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+.task-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+.meta-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 14.5px;
+    color: #444;
+    margin-bottom: 20px;
+}
+.meta-stacked strong {
+    color: #222;
+    font-weight: 600;
+}
+.badge {
+    background: #fef3c7;
+    color: #92400e;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.tag {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+.tag-yellow {
+    background: #fef9c3;
+    color: #854d0e;
+}
+.assignees {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 14px 0;
+}
+.assignees img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+}
+.description-box {
+    background: #f1f5f9;
+    padding: 14px;
+    border-radius: 8px;
+    margin-top: 14px;
+    font-size: 14px;
+    color: #333;
+}
+.attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+.attachment-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid #e5e7eb;
+}
+.tabs {
+    display: flex;
+    gap: 24px;
+    margin-top: 32px;
+    border-bottom: 2px solid #eee;
+}
+.tab {
+    padding: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.tab.active {
+    border-bottom: 3px solid #7c3aed;
+    color: #4c1d95;
+}
+.subtask-section {
+    margin-top: 24px;
+}
+.subtask-title {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+.subtask-item {
+    padding: 12px;
+    border: 1px solid #eee;
+    border-left: 5px solid #a78bfa;
+    border-radius: 6px;
+    background: #fafafa;
+    margin-bottom: 12px;
+}
+.subtask-item .note {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #4ade80;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    display: none;
+    z-index: 9999;
+}
+.btn-submit {
+    margin-top: 24px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.top-icons {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    gap: 14px;
+    font-size: 20px;
+    z-index: 10;
+}
+.top-icons a {
+    color: #7c3aed; /* Bright violet to stand out on white */
+    font-weight: bold;
+    text-decoration: none;
+    transition: opacity 0.2s ease-in-out;
+}
+.top-icons a:hover {
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.subtask-item select {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    font-size: 14px;
+}
+a:hover {
+  opacity: 0.85;
+}
+.subtask-section table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 12px;
+}
+
+.subtask-section thead {
+  background: #f3f4f6;
+  text-align: left;
+}
+
+.subtask-section th {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.subtask-section td {
+  padding: 16px;
+  background: #fff;
+  font-size: 14px;
+  color: #374151;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.subtask-section tr td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.subtask-section tr td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.subtask-section tr:hover td {
+  background-color: #f9fafb;
+}
+
+.status-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  border: 1px solid #ccc;
+}
+.scroll-area {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 4px;
+  }
+
+  .scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-area::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+
+  .alert.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.alert.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.alert.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+.alert.info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+</style>
+
+<div class="task-container">
+
+    {% if messages %}
+        <div class="messages" style="margin-bottom: 20px;">
+            {% for message in messages %}
+            <div class="alert {{ message.tags }}" style="padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="scroll-area">
+    
+    <div style="margin-bottom: 20px;">
+        <a href="{% url 'tasks:my_task' %}" 
+        style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: flex; align-items: center;">
+        <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
+            <path d="M11 2 5 8l6 6"/>
+        </svg>
+        Back to My Tasks
+        </a>
+    </div>
+    <!-- Top Right Icons -->
+    <div class="top-icons">
+        <a href="{% url 'interactions:task_notes' task.id %}?from=freelancer" title="Notes">📝</a>
+        <a href="{% url 'interactions:task_chat' task.id %}?from=freelancer" title="Chat">💬</a>
+        <a href="#" title="Edit Task" onclick="openEditTaskModal()">✏️</a>
+        <!-- <a href="#" title="Share">🔗</a> -->
+    </div>
+
+    <div class="task-title">{{ task.title }}</div>
+
+    <!-- Metadata -->
+    <div class="meta-stacked">
+        <div><strong>Status:</strong> <span class="badge">{{ task.get_status_display }}</span></div>
+        <div><strong>Due Date:</strong> {{ task.deadline }}</div>
+        <div><strong>Client:</strong> {{ task.client.username|default:"N/A" }}</div>
+        <div><strong>Created:</strong> {{ task.created_at|date:"d M Y" }}</div>
+    </div>
+
+    <h4>Description</h4>
+    <div class="description-box">{{ task.description }}</div>
+
+    <!-- Attachments -->
+    <h4 style="margin-top: 32px;">Attachments</h4>
+    <div class="attachments">
+        {% for attachment in attachments %}
+        <div class="attachment-item">
+            📎 <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.original_name }}</a>
+        </div>
+        {% empty %}
+        <div style="color: #999;">No attachments uploaded yet.</div>
+        {% endfor %}
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="file-upload" style="cursor: pointer;">
+                <div class="attachment-item" style="font-weight: bold;">➕</div>
+            </label>
+            <input id="file-upload" type="file" name="attachment" style="display: none;" onchange="this.form.submit()" multiple>
+        </form>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="toggleTab('subtasks')">Subtasks</div>
+        <div class="tab" onclick="toggleTab('revision')">Request Revisions</div>
+        <!-- <div class="tab" onclick="toggleTab('activities')">Activities</div> -->
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editTaskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+        <div style="background:#fff; max-width:500px; margin:60px auto; padding:24px; border-radius:10px;">
+        <h3>Edit Task</h3>
+        <form id="editTaskForm" method="post" action="{% url 'tasks:edit_task' task.id %}">
+            {% csrf_token %}
+            <label>Title</label>
+            <input type="text" name="title" value="{{ task.title }}" style="width:100%; padding:8px; margin:8px 0;" required>
+            
+            <label>Description</label>
+            <textarea name="description" style="width:100%; padding:8px; margin-bottom:8px;">{{ task.description }}</textarea>
+            
+            <label>Deadline</label>
+            <input type="date" name="deadline" value="{{ task.deadline|date:'Y-m-d' }}" style="width:100%; padding:8px; margin-bottom:16px;">
+            
+            <div class="form-errors" style="color:red; margin-top:10px;"></div>
+            
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="closeEditTaskModal()" style="padding:8px 16px;">Cancel</button>
+                <button type="submit" style="padding:8px 16px; background:#7c3aed; color:#fff; border:none; border-radius:6px;">Update</button>
+            </div>
+        </form>
+        </div>
+    </div>
+  
+
+    <!-- Request Revision -->
+    <div id="revision" class="subtask-section" style="display:none;">
+        <h4>Client Revision Requests</h4>
+        {% if revision_requests %}
+            {% for revision in revision_requests %}
+            <div style="margin-bottom: 20px; background: #f9fafb; border-left: 4px solid #8b5cf6; padding: 16px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; font-size: 14px; color: #6b7280;">👤 {{ revision.client.username }}</span>
+                    <span style="font-weight: bold; color: #8b5cf6; font-size: 15px;">
+                        📄 {{ revision.created_at|date:"d M Y H:i" }}
+                    </span>
+                </div>
+                <div style="margin-top: 8px; font-size: 14px; color: #374151;">{{ revision.comment }}</div>
+    
+                {% if revision.status != 'completed' %}
+                <form method="post" style="margin-top: 10px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="revision_id" value="{{ revision.id }}">
+                    <button type="submit" class="btn-submit" style="background:#8b5cf6;">Mark as Completed ✅</button>
+                </form>
+                {% else %}
+                <div style="margin-top: 8px;">
+                    <span style="color: #10b981; font-size: 13px; font-weight: 600;">✔ Completed</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="color:#999; font-size: 14px;">No revision requests yet.</div>
+        {% endif %}
+    </div>
+    
+    
+    
+
+    <!-- Subtasks Table View -->
+    <div id="subtasks" class="subtask-section">
+        <div class="subtask-title">
+            Our Design Process
+            <button onclick="openSubtaskModal()" class="btn-submit" style="float:right; margin-top:-6px;">+ Add Subtask</button>
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background:#f3f4f6;">
+                    <th style="padding:10px; text-align:left;">Name</th>
+                    <th style="padding:10px; text-align:left;">Description</th>
+                    <th style="padding:10px; text-align:left;">Due Date</th>
+                    <th style="padding:10px; text-align:left;">Status</th>
+                    <th style="padding:10px; text-align:left;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subtask in task.subtasks.all %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:10px;">{{ subtask.title }}</td>
+                    <td style="padding:10px;">{{ subtask.description|default:"—" }}</td>
+                    <td style="padding:10px;">{{ subtask.due_date|date:"d M Y"|default:"—" }}</td>
+                    <td style="padding:10px;">
+                        <form method="post" action="{% url 'tasks:update_subtask_status' task.id subtask.id %}">
+                            {% csrf_token %}
+                            <select name="status" onchange="this.form.submit()" style="padding:6px 12px; border-radius:6px; background:{{ subtask.status|get_status_color }};">
+                                <option value="pending" {% if subtask.status == 'pending' %}selected{% endif %}>⏳ Pending</option>
+                                <option value="in_progress" {% if subtask.status == 'in_progress' %}selected{% endif %}>🛠 In Progress</option>
+                                <option value="completed" {% if subtask.status == 'completed' %}selected{% endif %}>✅ Completed</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td style="padding:10px;">
+                        <a href="#" onclick="openEditSubtaskModal('{{ subtask.id }}', '{{ subtask.title }}', '{{ subtask.description }}', '{{ subtask.due_date|date:"Y-m-d" }}')">✏️</a>
+                        <form method="post" action="{% url 'tasks:update_subtask_status' task.id subtask.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="delete_subtask" value="true">
+                            <button type="submit" style="background:none; border:none; color:red;">🗑️ Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" style="padding: 14px; text-align:center;">No subtasks found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if task.status == 'in_progress' %}
+    <div style="display: flex; justify-content: flex-end; margin-top: 32px;">
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="submit_task" class="btn-submit" style="background:#8b5cf6;">
+                📤 Submit Task for Review
+            </button>
+        </form>
+    </div>
+    
+    {% endif %}
+</div>
+
+<!-- Subtask Modal -->
+<div id="subtaskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+    <div style="background:#fff; max-width:500px; margin:60px auto; padding:24px; border-radius:10px;">
+        <h3>Add New Subtask</h3>
+        <form id="subtaskForm" method="post" action="{% url 'tasks:create_subtask' task.id %}">
+            {% csrf_token %}
+            <div>
+                <label>Subtask Title</label>
+                <input type="text" name="title" required style="width:100%; padding:8px; margin:8px 0;">
+            </div>
+            <div>
+                <label>Description</label>
+                <textarea name="description" style="width:100%; padding:8px; margin-bottom:8px;"></textarea>
+            </div>
+            <div>
+                <label>Due Date</label>
+                <input type="date" name="due_date" style="width:100%; padding:8px; margin-bottom:8px;">
+            </div>
+            <div>
+                <label>Status</label>
+                <select name="status" style="width:100%; padding:8px; margin-bottom:16px;">
+                    <option value="pending">⏳ Pending</option>
+                    <option value="in_progress">🛠 In Progress</option>
+                    <option value="completed">✅ Completed</option>
+                </select>
+            </div>
+            <div class="form-errors" style="color:red; margin-top:10px;"></div>
+            <!-- <div style="text-align:right; margin-top:12px;">
+                <button type="button" onclick="closeSubtaskModal()">Cancel</button>
+                <button type="submit">Add</button>
+            </div> -->
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="closeSubtaskModal()" style="padding:8px 16px;">Cancel</button>
+                <button type="submit" style="padding:8px 16px; background:#7c3aed; color:#fff; border:none; border-radius:6px;">Add</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Subtask Modal -->
+<div id="editSubtaskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+    <div style="background:#fff; max-width:500px; margin:60px auto; padding:24px; border-radius:10px;">
+        <h3>Edit Subtask</h3>
+        <form id="editSubtaskForm" method="post" action="{% url 'tasks:edit_subtask' task.id %}">
+            {% csrf_token %}
+            <input type="hidden" name="subtask_id" id="editSubtaskId">
+            <label>Subtask Title</label>
+            <input type="text" name="title" id="editSubtaskTitle" required style="width:100%; padding:8px; margin:8px 0;">
+            <label>Description</label>
+            <textarea name="description" id="editSubtaskDescription" style="width:100%; padding:8px; margin-bottom:8px;"></textarea>
+            <label>Due Date</label>
+            <input type="date" name="due_date" id="editSubtaskDueDate" style="width:100%; padding:8px; margin-bottom:16px;">
+            <div class="form-errors" style="color:red;"></div>
+            <div style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" onclick="closeEditSubtaskModal()" style="padding:8px 16px;">Cancel</button>
+                <button type="submit" style="padding:8px 16px; background:#7c3aed; color:#fff; border:none; border-radius:6px;">Update</button>
+            </div>
+        </form>
+    </div>
+</div>
+  
+
+<!-- Toast Notification -->
+<div id="toast" class="toast">Subtask added successfully!</div>
+</div>
+
+<script>
+function toggleTab(tabId) {
+    ['subtasks', 'revision'].forEach(id => {
+        document.getElementById(id)?.style?.setProperty('display', id === tabId ? 'block' : 'none');
+    });
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function openEditTaskModal() {
+    document.getElementById("editTaskModal").style.display = "block";
+}
+function closeEditTaskModal() {
+    document.getElementById("editTaskModal").style.display = "none";
+}
+
+
+function openSubtaskModal() {
+    document.getElementById('subtaskModal').style.display = 'block';
+}
+function closeSubtaskModal() {
+     // Hide the modal
+     document.getElementById('subtaskModal').style.display = 'none';
+
+    // Reset the form
+    const form = document.querySelector('#subtaskModal form');
+    if (form) {
+        form.reset();
+    }
+}
+// Show toast from query param
+window.addEventListener('DOMContentLoaded', () => {
+    {% if request.GET.subtask_added %}
+    const toast = document.getElementById('toast');
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 3000);
+    {% endif %}
+});
+
+function openEditSubtaskModal(id, title, description, dueDate) {
+    document.getElementById('editSubtaskId').value = id;
+    document.getElementById('editSubtaskTitle').value = title;
+    document.getElementById('editSubtaskDescription').value = description;
+    document.getElementById('editSubtaskDueDate').value = dueDate;
+    document.getElementById('editSubtaskModal').style.display = 'block';
+}
+
+function closeEditSubtaskModal() {
+    document.getElementById('editSubtaskModal').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const forms = [
+    {id: 'subtaskForm', close: closeSubtaskModal},
+    {id: 'editSubtaskForm', close: closeEditSubtaskModal},
+    {id: 'editTaskForm', close: closeEditTaskModal},
+  ];
+
+  forms.forEach(cfg => {
+    const form = document.getElementById(cfg.id);
+    if (!form) return;
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const errDiv = form.querySelector('.form-errors');
+      errDiv.textContent = '';
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: {'X-CSRFToken': data.get('csrfmiddlewaretoken')},
+          body: data
+        });
+        const json = await res.json();
+
+        if (json.success) {
+          cfg.close();
+          location.reload();
+        } else {
+          errDiv.textContent = json.error || (json.success===false && json.error) || 'Unknown error.';
+        }
+      } catch {
+        errDiv.textContent = 'Unexpected error occurred.';
+      }
+    });
+  });
+});
+
+</script>
+{% endblock %}

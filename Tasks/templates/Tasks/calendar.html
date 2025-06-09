@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Task Calendar{% endblock %}
+{% block heading %}Task Deadline Calendar{% endblock %}
+
+{% block content %}
+<div id="calendar"></div>
+
+<!-- FullCalendar CDN -->
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: '{% url "tasks:calendar_events" %}',
+        eventDidMount: function(info) {
+            const role = info.event.extendedProps.role;
+            const client = info.event.extendedProps.client;
+            info.el.title = `${info.event.title} (Client: ${client})`;
+        },
+        eventClick: function(info) {
+            info.jsEvent.preventDefault();
+            if (info.event.url) {
+                window.location.href = info.event.url;
+            }
+        }
+    });
+    calendar.render();
+});
+</script>
+
+<style>
+#calendar {
+    max-width: 800px;
+    margin: 30px auto;
+    font-family: Arial, sans-serif;
+}
+</style>
+{% endblock %}

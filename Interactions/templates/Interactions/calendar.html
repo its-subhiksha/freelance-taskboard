@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Calendar{% endblock %}
+{% block heading %}📅 My Task Calendar{% endblock %}
+
+{% block content %}
+<style>
+  .calendar-container {
+    display: flex;
+    gap: 30px;
+  }
+
+  #calendar {
+    width: 60%;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+  }
+
+  .side-panel {
+    width: 40%;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .task-box {
+    background: #fff;
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .task-box h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+  }
+
+  .task-box small {
+    color: #555;
+  }
+
+  .fc-daygrid-day:hover {
+    background-color: #fff4f4 !important;
+    cursor: pointer;
+  }
+
+  .fc-daygrid-day.fc-day-today {
+    border: 2px solid #9333ea;
+    border-radius: 6px;
+  }
+
+  .has-deadline {
+    background-color: #fbeaea !important;
+    border-radius: 6px;
+  }
+
+  .filter-bar {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: #ccc;
+  }
+
+  .filter-bar label {
+    margin-left: 12px;
+    cursor: pointer;
+  }
+</style>
+
+<!-- 🔘 Role Filter -->
+<div class="filter-bar">
+  <strong>Filter by Role:</strong>
+  <label><input type="radio" name="roleFilter" value="all" checked> All</label>
+  <label><input type="radio" name="roleFilter" value="Freelancer"> Freelancer</label>
+  <label><input type="radio" name="roleFilter" value="Client"> Client</label>
+</div>
+
+<div class="calendar-container">
+  <!-- Calendar -->
+  <div id="calendar"></div>
+
+  <!-- Task Details Panel -->
+  <div class="side-panel">
+    <h3>Tasks on <span id="selected-date">[Click a date]</span></h3>
+    <div id="task-list">
+      <p style="color: #fff;">No date selected.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FullCalendar Static -->
+<link href="{% static 'fullcalendar/main.min.css' %}" rel="stylesheet">
+<script src="{% static 'fullcalendar/main.min.js' %}"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+    const taskListEl = document.getElementById('task-list');
+    const selectedDateEl = document.getElementById('selected-date');
+    let dateToTaskMap = {};
+    let currentRoleFilter = "all";
+
+    // Listen to role filter changes
+    document.querySelectorAll('input[name="roleFilter"]').forEach(radio => {
+      radio.addEventListener('change', function () {
+        currentRoleFilter = this.value;
+        updateHighlightedCells();
+      });
+    });
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      height: 500,
+      events: '{% url "interactions:calendar_events" %}',
+      eventDisplay: 'none',
+
+      eventsSet: function (events) {
+        dateToTaskMap = {};
+        events.forEach(event => {
+          const date = event.startStr;
+          if (!dateToTaskMap[date]) {
+            dateToTaskMap[date] = [];
+          }
+          dateToTaskMap[date].push(event);
+        });
+        updateHighlightedCells();
+      },
+
+      dayCellDidMount: function (info) {
+        const dateStr = info.date.toISOString().split('T')[0];
+        const tasks = dateToTaskMap[dateStr] || [];
+        const filtered = tasks.filter(task =>
+          currentRoleFilter === 'all' || task.extendedProps.role === currentRoleFilter
+        );
+        if (filtered.length > 0) {
+          info.el.classList.add('has-deadline');
+        }
+      },
+
+      dateClick: function (info) {
+        const clickedDate = info.dateStr;
+        selectedDateEl.textContent = clickedDate;
+        const tasks = dateToTaskMap[clickedDate] || [];
+
+        const filteredTasks = tasks.filter(task =>
+          currentRoleFilter === 'all' || task.extendedProps.role === currentRoleFilter
+        );
+
+        taskListEl.innerHTML = '';
+
+        if (filteredTasks.length === 0) {
+          taskListEl.innerHTML = '<p style="color:#777;">No tasks for this role.</p>';
+          return;
+        }
+
+        filteredTasks.forEach(task => {
+          const taskBox = document.createElement('div');
+          taskBox.classList.add('task-box');
+
+          // Create dynamic link based on role
+          const taskUrl = task.extendedProps.role === 'Freelancer'
+            ? `/tasks/freelancer/taskdetail/${task.extendedProps.id}/`
+            : `/tasks/client/taskdetail/${task.extendedProps.id}/`;
+
+          taskBox.innerHTML = `
+            <h4>
+              <a href="${taskUrl}" target="_blank" style="text-decoration: none; color: #1f2937;">
+                ${task.title}
+              </a>
+            </h4>
+            <small>Role: ${task.extendedProps.role}</small><br>
+            <small>Freelancer: ${task.extendedProps.freelancer}</small><br>
+            <small>Client: ${task.extendedProps.client}</small>
+          `;
+
+          taskListEl.appendChild(taskBox);
+        });
+      }
+    });
+
+    calendar.render();
+
+    function updateHighlightedCells() {
+      document.querySelectorAll('.fc-daygrid-day').forEach(cell => {
+        const dateStr = cell.getAttribute('data-date');
+        cell.classList.remove('has-deadline');
+
+        const tasks = dateToTaskMap[dateStr] || [];
+        const filtered = tasks.filter(task =>
+          currentRoleFilter === 'all' || task.extendedProps.role === currentRoleFilter
+        );
+
+        if (filtered.length > 0) {
+          cell.classList.add('has-deadline');
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

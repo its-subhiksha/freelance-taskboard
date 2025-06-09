@@ -1,0 +1,180 @@
+{% load static %}
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <img src="{% static 'images/taskboard_logo.png' %}" class="logo-icon" alt="Logo">
+    <span class="logo-text"><span class="highlight">Task</span>Board</span>
+  </div>
+
+  <div class="sidebar-nav">
+    <!-- Dashboard -->
+    <div class="nav-section">
+      <a href="{% url 'accounts:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="icon">🏠</i>
+        Dashboard
+      </a>
+    </div>
+
+    <!-- Freelancer Section -->
+    <div class="nav-section">
+      <span class="nav-section-title">Freelancer</span>
+      <a href="{% url 'tasks:create_task' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'create_task' %}active{% endif %}">
+        <i class="icon">➕</i>
+        Create Task
+      </a>
+      <a href="{% url 'tasks:my_task' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'my_task' %}active{% endif %}">
+        <i class="icon">📋</i>
+        My Tasks
+      </a>
+      <a href="{% url 'tasks:members' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'members' %}active{% endif %}">
+        <i class="icon">👥</i>
+        Members
+      </a>
+    </div>
+
+    <!-- Client Section -->
+    <div class="nav-section">
+      <span class="nav-section-title">Client</span>
+      <a href="{% url 'tasks:client_tasks' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'client_tasks' %}active{% endif %}">
+        <i class="icon">✅</i>
+        Client Tasks
+      </a>
+      <a href="{% url 'tasks:incoming_invitations' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'incoming_invitations' %}active{% endif %}">
+        <i class="icon">📨</i>
+        Invitations
+      </a>
+    </div>
+
+    <!-- Calendar -->
+    <div class="nav-section">
+      <a href="{% url 'interactions:calendar' %}" class="nav-link {% if request.resolver_match.url_name == 'calendar' %}active{% endif %}">
+        <i class="icon">📅</i>
+        Calendar
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <a href="{% url 'accounts:profile' %}" class="nav-link" style="display: flex; align-items: center; gap: 12px;">
+      <img
+        src="{% if request.user.profile_photo %}{{ request.user.profile_photo.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}"
+        alt="Profile"
+        style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;"
+      >
+      <span style="color: #d1d5db; font-size: 14px;">Profile</span>
+    </a>
+
+    <a href="{% url 'accounts:logout' %}" class="nav-link logout-link">
+      <i class="icon">🚪</i>
+      Sign Out
+    </a>
+  </div>
+</aside>
+
+<!-- 🔧 Embedded CSS -->
+<style>
+.sidebar {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  bottom: 12px;
+  width: 227px;
+  background-color: #111827;
+  border-radius: 20px;
+  color: #f9fafb;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 0 10px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.logo-text .highlight {
+  color: #facc15;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-section-title {
+  color: #9ca3af;
+  font-size: 13px;
+  margin-left: 14px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #d1d5db;
+  padding: 10px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.submenu-link {
+  padding-left: 32px; /* Indent submenu items */
+}
+
+.nav-link:hover {
+  background-color: #b4a9fc;
+  color: white;
+}
+
+.nav-link.active {
+  background-color:#b4a9fc;
+  color: white;
+  font-weight: 600;
+}
+
+.icon {
+  font-size: 16px;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid #374151;
+  padding-top: 16px;
+}
+
+.logout-link {
+  color: #f87171;
+}
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid #374151;
+  padding-top: 16px;
+}
+
+</style>

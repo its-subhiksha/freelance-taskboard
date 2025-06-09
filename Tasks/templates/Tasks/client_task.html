@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Assigned Tasks{% endblock %}
+{% block heading %}Assigned Tasks{% endblock %}
+
+{% block content %}
+<style>
+  .task-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scroll-area {
+    overflow-y: auto;
+    flex: 1;
+    margin-top: 20px;
+    padding-right: 6px;
+  }
+
+  .scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-area::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-sort label {
+    font-size: 14px;
+    color: #333;
+  }
+
+  .filter-dropdown {
+    padding: 6px 10px;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+
+  .task-card {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+  }
+
+  .task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Status-Based Colors */
+  .task-card.in-progress {
+    border-left: 5px solid #fde68a;
+  }
+
+
+  .task-card.under-review {
+    border-left: 5px solid #bfdbfe;
+  }
+
+  .task-card.completed {
+    border-left: 5px solid #bbf7d0;
+  }
+
+  .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .task-header h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .task-card.in-progress .badge {
+    background-color: #fef9c3;
+    color: #92400e;
+  }
+
+  .task-card.under-review .badge {
+    background-color: #dbeafe;
+    color: #1e3a8a;
+  }
+
+  .task-card.completed .badge {
+    background-color: #dcfce7;
+    color: #065f46;
+  }
+  
+  .task-meta {
+    font-size: 14px;
+    color: #4b5563;
+    margin-top: 6px;
+  }
+
+  .description {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.5;
+  }
+
+  .attachments {
+    margin-top: 12px;
+  }
+
+  .attachment {
+    font-size: 14px;
+    color: #0d6efd;
+    text-decoration: underline;
+  }
+
+  .task-buttons {
+    margin-top: 14px;
+  }
+
+  .btn-primary {
+    background-color: #ede9fe;
+    color: #7c3aed;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .btn-primary:hover {
+    background-color: #e9d5ff;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+  }
+</style>
+
+<div class="task-container">
+  <div class="header">
+    <h2 style="font-size: 22px; font-weight: 600; margin: 0;">Active Tasks</h2>
+    <form method="get" class="filter-sort" style="display: flex; align-items: center; gap: 12px;">
+      <label for="status">Filter:</label>
+      <select name="status" id="status" onchange="this.form.submit()" class="filter-dropdown">
+        <option value="">All</option>
+        <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="under_review" {% if status_filter == 'under_review' %}selected{% endif %}>Under Review</option>
+        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+      </select>
+
+      <label for="sort">Sort:</label>
+      <select name="sort" id="sort" onchange="this.form.submit()" class="filter-dropdown">
+        <option value="">By Deadline</option>
+        <option value="sooner" {% if sort_by == 'sooner' %}selected{% endif %}>Sooner</option>
+        <option value="later" {% if sort_by == 'later' %}selected{% endif %}>Later</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="scroll-area">
+    {% for task in tasks %}
+    <div class="task-card {% if task.status == 'in_progress' %}in-progress{% elif task.status == 'under_review' %}under-review{% elif task.status == 'completed' %}completed{% endif %}">
+      <div class="task-header">
+        <h3>{{ task.title }}</h3>
+        <span class="badge">{{ task.get_status_display }}</span>
+      </div>
+      <div class="task-meta">
+        Freelancer: {{ task.freelancer.username }} &nbsp;&nbsp;|&nbsp;&nbsp;
+        Deadline: {{ task.deadline }}
+      </div>
+
+      <div class="description">{{ task.description }}</div>
+
+      <!-- {% if task.attachements.all %}
+      <div class="attachments">
+        {% for attachment in task.attachements.all %}
+        <a href="{{ attachment.file.url }}" target="_blank" class="attachment">
+          📎 {{ attachment.original_name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %} -->
+
+      <div class="task-buttons">
+        <a href="{% url 'tasks:client_taskdetail' task.id %}" class="btn btn-primary">View Details</a>
+      </div>
+    </div>
+    {% empty %}
+    <p>No tasks assigned to you.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

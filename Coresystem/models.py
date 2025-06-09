@@ -12,7 +12,7 @@ class AuthTokens(models.Model):
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE,null=True, blank=True)
     token = models.CharField(max_length=255,unique=True)
-    auth_type = models.CharField(choices=TokenType.choices)
+    auth_type = models.IntegerField(choices=TokenType.choices)
     is_valid = models.BooleanField(default=True)
     created_on = models.DateTimeField(auto_now_add=True)
     expires_on = models.DateTimeField()

@@ -14,4 +14,7 @@ urlpatterns = [
     path('logout/', views.LogoutView.as_view(), name='logout'),
     path('client/dashboard/', views.ClientDashboard.as_view(), name='client_dashboard'),
     path('freelancer/dashboard/', views.FreelancerDashboard.as_view(), name='freelancer_dashboard'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
+    path('reset-password/<uidb64>/<token>/', views.ResetPasswordView.as_view(), name='reset_password'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}Incoming Invitations{% endblock %}
+{% block heading %}Incoming Invitations{% endblock %}
+
+{% block content %}
+<style>
+  .invitation-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scroll-area {
+    overflow-y: auto;
+    flex: 1;
+    padding-right: 6px;
+    margin-top: 15px;
+  }
+
+  .scroll-area::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scroll-area::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+
+  .task-card {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border-left: 5px solid #e7e3dc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  }
+
+  .task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .task-header h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .badge {
+    background-color: #f4f1ec;
+    color: #5c5246;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+  }
+
+  .task-meta {
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
+  }
+
+  .description {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #444;
+  }
+
+  .attachments {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .attachment {
+    background: #ece9e3;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #333;
+    text-decoration: none;
+  }
+
+  .task-buttons {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .btn-primary {
+    background-color: #ede9fe;
+    color: #7c3aed;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background-color: #e9d5ff;
+    box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+  }
+
+  .no-invitations {
+    text-align: center;
+    margin-top: 80px;
+    color: #666;
+  }
+
+  .no-invitations img {
+    width: 160px;
+    margin-bottom: 20px;
+    opacity: 0.9;
+  }
+
+  .no-invitations p {
+    font-size: 16px;
+    color: #4b5563;
+  }
+</style>
+
+<div class="invitation-container">
+  <h2 style="font-size: 22px; font-weight: 600; margin-bottom: 10px;">Welcome, {{ user.username }} 👋</h2>
+  <h3 style="margin-bottom: 10px;">Incoming Invitations</h3>
+
+  <div class="scroll-area">
+    {% for invitation in invitations %}
+    <div class="task-card">
+      <div class="task-header">
+        <h3>{{ invitation.task.title }}</h3>
+        <span class="badge">Pending</span>
+      </div>
+
+      <div class="task-meta">
+        Freelancer: {{ invitation.task.freelancer.username }} &nbsp;&nbsp;|&nbsp;&nbsp;
+        Deadline: {{ invitation.task.deadline }}
+      </div>
+
+      <div class="description">{{ invitation.task.description }}</div>
+
+      {% if invitation.task.attachements.all %}
+      <div class="attachments">
+        {% for file in invitation.task.attachements.all %}
+        <a href="{{ file.file.url }}" target="_blank" class="attachment">
+          📎 {{ file.original_name }}
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="task-buttons">
+        <form method="POST" action="{% url 'tasks:incoming_invitations' %}">
+          {% csrf_token %}
+          <input type="hidden" name="invitation_id" value="{{ invitation.id }}">
+          <input type="hidden" name="task_id" value="{{ invitation.task.id }}">
+          <button type="submit" class="btn-primary">Accept Invitation</button>
+        </form>
+      </div>
+    </div>
+    {% empty %}
+    <div class="no-invitations">
+      <img src="https://cdn-icons-png.flaticon.com/512/7486/7486987.png" alt="No Invitations">
+      <p>No incoming invitations at this time.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

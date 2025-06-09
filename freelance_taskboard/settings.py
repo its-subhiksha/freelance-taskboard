@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +30,29 @@ SECRET_KEY = 'django-insecure-1tuu39^b0%%of2m9k2k_1a!1kio23r%onz@i+#99j03z55dd*3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# # ─── Environment Config 
+# ENVIRONMENT = os.getenv("ENVIRONMENT", "LOCAL")
+# LOCAL = os.getenv("LOCAL", "True") != "False"
+# DEBUG = os.getenv("DEBUG", "True") != "False"
+# OSX = os.getenv("OSX", "WIN")
+
+
+# # ─── Domain Configuration
+# PRIMARY_DOMAIN = os.getenv("PRIMARY_DOMAIN", "freelancetaskboard.localhost")
+# SUBDOMAIN_HOST = os.getenv("SUBDOMAIN_HOST", "localhost")
+# FULL_HOST_LINK = os.getenv("FULL_HOST_LINK", f"http://{PRIMARY_DOMAIN}:8000")
+# DJANGO_SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+# HTTP_PROTOCOL = os.getenv("HTTP_PROTOCOL", "http")
+
+ALLOWED_HOSTS = ['freelancetaskboard.com', 'localhost', '127.0.0.1']
+
+# if ENVIRONMENT == "LOCAL":
+#     ALLOWED_HOSTS = ['localhost', '127.0.0.1', f'.{SUBDOMAIN_HOST}', '*']
+# elif ENVIRONMENT == "TEST":
+#     ALLOWED_HOSTS = [".testdomain.com"]
+# elif ENVIRONMENT == "PRODUCTION":
+#     ALLOWED_HOSTS = ["your-production-domain.com", f".{SUBDOMAIN_HOST}"]
+
 
 
 # Application definition
@@ -38,6 +63,8 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
+    'channels',
     'django.contrib.staticfiles',
 
     # Third-party apps
@@ -51,6 +78,7 @@ INSTALLED_APPS = [
     'Scheduling.apps.SchedulingConfig',
     'Notifications.apps.NotificationsConfig',
     'Coresystem.apps.CoresystemConfig',
+    'Interactions.apps.InteractionsConfig',
 ]
 
 MIDDLEWARE = [
@@ -61,6 +89,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Coresystem.middleware.DashboardAuthMiddleware',
 ]
 
 
@@ -76,6 +105,27 @@ MIDDLEWARE = [
 #     ),
 # }
 
+ASGI_APPLICATION = "freelance_taskboard.asgi.application"
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+
+# }
 
 
 SIMPLE_JWT = {
@@ -84,7 +134,10 @@ SIMPLE_JWT = {
 }
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
+
+INVALID_DOMAIN_CSV = os.path.join(BASE_DIR, "Coresystem/securityfiles/temp_domains.csv")
 
 ROOT_URLCONF = 'freelance_taskboard.urls'
 
@@ -122,6 +175,15 @@ DATABASES = {
     }
 }
 
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your SMTP provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@gmail.com'
+EMAIL_HOST_PASSWORD = 'your_app_password_or_password'
+DEFAULT_FROM_EMAIL = 'Your Project <your_email@gmail.com>'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -158,7 +220,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT =  os.path.join(BASE_DIR, 'static')
 STATICFILES_DIR = (
     os.path.join(BASE_DIR,'Accounts', 'static'),
@@ -167,6 +229,7 @@ STATICFILES_DIR = (
     os.path.join(BASE_DIR,'Scheduling', 'static'),
     os.path.join(BASE_DIR,'Notifications', 'static'),
     os.path.join(BASE_DIR,'Coresystem', 'static'),
+    os.path.join(BASE_DIR,'Interactions', 'static'),
 )
 
 MEDIA_ROOT = BASE_DIR / 'media'

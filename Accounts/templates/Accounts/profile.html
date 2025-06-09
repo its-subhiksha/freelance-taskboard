@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}My Tasks{% endblock %}
+{% block heading %}My Tasks{% endblock %}
+
+{% block content %}
+<style>
+.profile-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.profile-section {
+  background: #fff;
+  padding: 24px;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 24px;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-header-left img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-header-left div {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.profile-section .edit-btn {
+  color: #7c3aed;
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-decoration: underline;
+}
+
+.profile-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.profile-grid > div {
+  font-size: 14px;
+}
+
+.profile-grid strong {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.profile-grid .full-row {
+  grid-column: 1 / -1;
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-top: 4px;
+  background-color: #fff;
+}
+
+.save-btn {
+  background-color: #7c3aed;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 12px;
+}
+.toast {
+  background-color: #22c55e;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  animation: fadeOut 4s ease forwards;
+}
+.toast-error {
+  background-color: #ef4444; /* Tailwind red-500 */
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+</style>
+
+<div class="profile-container">
+  <h2 style="font-size: 24px; font-weight: 700; margin-bottom: 24px;">My Profile</h2>
+
+  <form method="post" enctype="multipart/form-data" id="profile-form">
+    {% csrf_token %}
+    <div class="profile-section profile-header">
+      <div class="profile-header-left">
+        <img src="{% if user.profile_photo %}{{ user.profile_photo.url }}{% else %}{% static 'images/default_avatar.png' %}{% endif %}" alt="Avatar">
+        <div>
+          <p style="font-weight: 600; font-size: 16px;">{{ user.get_full_name|default:user.username }}</p>
+          <p style="font-size: 14px; color: #6b7280;">{{ user.bio|default:"No bio provided" }}</p>
+          <p style="font-size: 13px; color: #9ca3af;">{{ user.location|default:"Location not set" }}</p>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="profile-section" id="personal-section">
+      <div class="profile-header">
+        <h3>Personal Information</h3>
+        <button type="button" class="edit-btn" onclick="toggleEdit('personal-section')">Edit ✏️</button>
+      </div>
+      <div class="profile-grid">
+        <div><strong>First Name</strong><input type="text" name="first_name" value="{{ user.first_name }}" readonly></div>
+        <div><strong>Last Name</strong><input type="text" name="last_name" value="{{ user.last_name }}" readonly></div>
+        <div><strong>Email address</strong><input type="email" name="email" value="{{ user.email }}" readonly></div>
+        <div><strong>Phone</strong><input type="text" name="phone_number" value="{{ user.phone_number }}" readonly></div>
+        <div class="full-row"><strong>Bio</strong><textarea name="bio" readonly>{{ user.bio }}</textarea></div>
+      </div>
+      <div class="error-message" id="error-personal" style="color: red; margin-top: 10px;"></div>
+
+    </div>
+
+     <!-- Web Presence -->
+     <div class="profile-section" id="web-section">
+      <div class="profile-header">
+        <h3>Web Presence</h3>
+        <button type="button" class="edit-btn" onclick="toggleEdit('web-section')">Edit ✏️</button>
+      </div>
+      <div class="profile-grid">
+        <div><strong>Website</strong><input type="url" name="website" value="{{ user.website }}" readonly></div>
+        <div><strong>LinkedIn</strong><input type="url" name="linkedin_url" value="{{ user.linkedin_url }}" readonly></div>
+        <div><strong>Location</strong><input type="text" name="location" value="{{ user.location }}" readonly></div>
+        <div><strong>Profile Photo</strong><input type="file" name="profile_photo" disabled></div>
+      </div>
+      <div class="error-message" id="error-web" style="color: red; margin-top: 10px;"></div>
+
+    </div>
+
+    <button type="submit" class="save-btn">Save ✅</button>
+    <div id="success-message" style="color: green; margin-top: 16px;"></div>
+  </form>
+</div>
+
+<script>
+// function toggleEdit(sectionId) {
+//   const section = document.getElementById(sectionId);
+//   if (!section) return;
+//   section.querySelectorAll('input, textarea, select').forEach(input => {
+//     if (input.hasAttribute('readonly')) {
+//       input.removeAttribute('readonly');
+//       input.style.backgroundColor = '#fff';
+//       input.style.border = '1px solid #7c3aed';
+//     } else {
+//       input.setAttribute('readonly', 'readonly');
+//       input.style.backgroundColor = '#f9f9f9';
+//       input.style.border = '1px solid #ccc';
+//     }
+//   });
+// }
+
+function toggleEdit(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (!section) return;
+
+  section.querySelectorAll('input, textarea, select').forEach(input => {
+    const type = input.getAttribute('type');
+    if (type === 'file') {
+      input.disabled = !input.disabled;
+    } else {
+      const isReadOnly = input.hasAttribute('readonly');
+      if (isReadOnly) {
+        input.removeAttribute('readonly');
+        input.style.backgroundColor = '#fff';
+        input.style.border = '1px solid #7c3aed';
+      } else {
+        input.setAttribute('readonly', 'readonly');
+        input.style.backgroundColor = '#f9f9f9';
+        input.style.border = '1px solid #ccc';
+      }
+    }
+  });
+}
+
+document.getElementById('profile-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const formData = new FormData(form);
+
+  // Clear existing errors
+  document.getElementById('error-personal').innerText = "";
+  document.getElementById('error-web').innerText = "";
+
+  fetch("", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+    },
+    body: formData,
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById("success-message").innerText = data.message || "Profile updated successfully!";
+    } else {
+      // Show errors inline as before
+      const errorMsg = data.error.toLowerCase();
+      if (errorMsg.includes("phone") || errorMsg.includes("name") || errorMsg.includes("bio") || errorMsg.includes("email")) {
+        document.getElementById("error-personal").innerText = data.error;
+      } else {
+        document.getElementById("error-web").innerText = data.error;
+      }
+    }
+  })
+  .catch(error => {
+    document.getElementById("error-personal").innerText = "An unexpected error occurred.";
+    console.error("Error:", error);
+  });
+});
+
+</script>
+{% endblock %}

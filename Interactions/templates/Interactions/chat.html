@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}Task Chat{% endblock %}
+{% block heading %}Chat for Task: {{ task.title }}{% endblock %}
+
+{% block content %}
+<style>
+.chat-container {
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.chat-box {
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    padding: 20px;
+    height: 400px;
+    overflow-y: scroll;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.message-incoming {
+    align-self: flex-start;
+    background: #b4a9fc;
+    color: #111;
+    padding: 10px 16px;
+    border-radius: 18px;
+    max-width: 65%;
+    font-size: 14px;
+}
+
+.message-outgoing {
+    align-self: flex-end;
+    background: #bfae5e;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 18px;
+    max-width: 65%;
+    font-size: 14px;
+}
+
+.message-meta {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+    display: block;
+    text-align: right;
+}
+
+.chat-input-box {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #ddd;
+    padding-top: 16px;
+    gap: 12px;
+}
+
+.chat-input-box input[type="text"] {
+    flex: 1;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+}
+
+.chat-input-box button {
+    background: #bfae5e;
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+}
+</style>
+
+<div class="chat-container">
+    <div style="margin-bottom: 12px;">
+        {% if request.GET.from == 'freelancer' %}
+            <a href="{% url 'tasks:task_detail' task.id %}" style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">
+                <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
+                    <path d="M11 2 5 8l6 6"/>
+                </svg>
+                Back to Task
+            </a>
+        {% elif request.GET.from == 'client' %}
+            <a href="{% url 'tasks:client_taskdetail' task.id %}" style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">
+                <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
+                    <path d="M11 2 5 8l6 6"/>
+                </svg>
+                Back to Task
+            </a>
+        {% endif %}
+    </div>
+    
+    <div class="chat-header" style="font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+        💬 Task Conversation
+    </div>
+    
+
+    <div id="chat-log" class="chat-box">
+        {% for message in messages %}
+            <div class="{% if message.sender == user %}message-outgoing{% else %}message-incoming{% endif %}">
+                {{ message.content }}<br>
+                <span class="message-meta">{{ message.timestamp|date:"H:i" }}</span>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="chat-input-box">
+        <input id="chat-message-input" type="text" placeholder="Type your message here..." autocomplete="off">
+        <button id="chat-message-submit">📤</button>
+    </div>
+</div>
+
+<script>
+const taskId = "{{ task.id }}";
+const chatSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/task/' + taskId + '/'
+);
+
+chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    const chatLog = document.getElementById('chat-log');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = data.sender === "{{ user.username }}" ? "message-outgoing" : "message-incoming";
+    messageDiv.innerHTML = `${data.message}<br><span class='message-meta'>Now</span>`;
+    chatLog.appendChild(messageDiv);
+    chatLog.scrollTop = chatLog.scrollHeight;
+};
+
+chatSocket.onclose = function(e) {
+    console.error('Chat socket closed unexpectedly');
+};
+
+const inputField = document.getElementById("chat-message-input");
+const sendBtn = document.getElementById("chat-message-submit");
+
+sendBtn.onclick = function() {
+    const message = inputField.value.trim();
+    if (message) {
+        chatSocket.send(JSON.stringify({ message }));
+        inputField.value = '';
+    }
+};
+
+inputField.addEventListener("keyup", function(e) {
+    if (e.keyCode === 13) {
+        sendBtn.click();
+    }
+});
+</script>
+{% endblock %}

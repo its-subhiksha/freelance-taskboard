@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block title %}Notes – {{ task.title }}{% endblock %}
+{% block heading %}📝 Notes{% endblock %}
+
+{% block content %}
+<style>
+.notes-wrapper {
+    display: flex;
+    height: 550px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.notes-sidebar {
+    width: 300px;
+    background: #f8f9fa;
+    border-right: 1px solid #eee;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.note-item {
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    cursor: pointer;
+}
+
+.note-item.active,
+.note-item:hover {
+    background: #e5e7eb;
+}
+
+.note-item small {
+    display: block;
+    color: #666;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.notes-editor {
+    flex: 1;
+    padding: 24px;
+}
+
+#note-title {
+    width: 100%;
+    font-size: 20px;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+#note-content {
+    width: 100%;
+    height: 300px;
+    font-size: 15px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    resize: vertical;
+    background: #fefefe;
+}
+
+#save-status {
+    font-size: 13px;
+    margin-top: 10px;
+    color: #666;
+}
+
+#manual-save-btn {
+    background: #7c3aed;
+    color: white;
+    padding: 8px 20px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: pointer;
+
+}
+</style>
+
+<div class="notes-wrapper">
+
+    <div class="notes-sidebar">
+            <!-- Back to Task - pinned to top left -->
+        <div style="margin-bottom: 20px;">
+            {% if request.GET.from == 'freelancer' or task.freelancer == request.user %}
+                <a href="{% url 'tasks:task_detail' task.id %}" 
+                style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: flex; align-items: center;">
+                    <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
+                        <path d="M11 2 5 8l6 6"/>
+                    </svg>
+                    Back to Task
+                </a>
+            {% elif request.GET.from == 'client' or task.client == request.user %}
+                <a href="{% url 'tasks:client_taskdetail' task.id %}" 
+                style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: flex; align-items: center;">
+                    <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
+                        <path d="M11 2 5 8l6 6"/>
+                    </svg>
+                    Back to Task
+                </a>
+            {% endif %}
+
+        </div>
+    
+        <form method="post" action="{% url 'interactions:create_note' %}?from={{ request.GET.from }}" style="margin-bottom: 16px;">
+            {% csrf_token %}
+            <input type="hidden" name="task_id" value="{{ task.id }}">
+            <button type="submit" class="btn-submit" style="width: 100%;">➕ Add Note</button>
+        </form>
+
+        {% for note in notes %}
+        <div class="note-item {% if note.id == selected_note_id %}active{% endif %}">
+            <a href="{% url 'interactions:task_notes' task.id %}?note_id={{ note.id }}" style="text-decoration:none; color:inherit;">
+                <strong>{{ note.title|default:"Untitled" }}</strong>
+                <small>{{ note.created_at|date:"d M, Y" }}</small>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="notes-editor">
+        {% if note %}
+        <form id="note-form">
+            {% csrf_token %}
+            <input type="text" id="note-title" name="title" value="{{ note.title }}" placeholder="Note title..." />
+            <textarea id="note-content" name="content" placeholder="Start typing your note...">{{ note.content }}</textarea>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                <small id="save-status" style="color: #6b7280;">All changes saved.</small>
+                <button type="button" id="manual-save-btn">💾 Save</button>
+            </div>
+        </form>
+        {% else %}
+        <p style="color: #555;">No note selected. Click a note on the left or create a new one.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if note %}
+<script>
+    const form = document.getElementById('note-form');
+    const status = document.getElementById('save-status');
+    let timer = null;
+
+    function autoSave() {
+        const formData = new FormData(form);
+        fetch("{% url 'interactions:note_autosave' note.id %}", {
+            method: "POST",
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: formData
+        })
+        .then(() => status.textContent = "All changes saved.")
+        .catch(() => status.textContent = "Error saving.");
+    }
+
+    document.getElementById('note-title').addEventListener('input', () => {
+        status.textContent = "Saving...";
+        clearTimeout(timer);
+        timer = setTimeout(autoSave, 800);
+    });
+
+    document.getElementById('note-content').addEventListener('input', () => {
+        status.textContent = "Saving...";
+        clearTimeout(timer);
+        timer = setTimeout(autoSave, 800);
+    });
+
+    document.getElementById('manual-save-btn').addEventListener('click', () => {
+        status.textContent = "Saving...";
+        autoSave();
+    });
+</script>
+{% endif %}
+{% endblock %}
