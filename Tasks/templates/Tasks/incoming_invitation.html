@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Incoming Invitations{% endblock %}
 {% block heading %}Incoming Invitations{% endblock %}
 
@@ -129,6 +129,37 @@
     font-size: 16px;
     color: #4b5563;
   }
+  .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: 40px;
+  padding: 30px 20px;
+  color: #6b7280;
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  margin-top: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.empty-state p {
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.empty-img {
+  width: 280px;
+  max-width: 100%;
+  margin-bottom: 16px;
+  opacity: 0.97;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
+}
+
 </style>
 
 <div class="invitation-container">
@@ -170,9 +201,10 @@
       </div>
     </div>
     {% empty %}
-    <div class="no-invitations">
-      <img src="https://cdn-icons-png.flaticon.com/512/7486/7486987.png" alt="No Invitations">
-      <p>No incoming invitations at this time.</p>
+    <div class="empty-state">
+      <img src="{% static 'images/no-incoming-invitations.png' %}" alt="No Invitations" class="empty-img">
+      <h3>No Incoming Invitations</h3>
+      <p>You're all caught up! Any invitations you receive will show up here.</p>
     </div>
     {% endfor %}
   </div>

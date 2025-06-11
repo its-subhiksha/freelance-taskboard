@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load extras %}
-
+{% load static %}
 {% block title %}Task Detail{% endblock %}
 {% block heading %}{{ task.title }}{% endblock %}
 
@@ -287,8 +287,8 @@ a:hover {
     </div>
     <!-- Top Right Icons -->
     <div class="top-icons">
-        <a href="{% url 'interactions:task_notes' task.id %}?from=freelancer" title="Notes">📝</a>
-        <a href="{% url 'interactions:task_chat' task.id %}?from=freelancer" title="Chat">💬</a>
+        <a href="{% url 'interactions:task_notes' task.uuid %}?from=freelancer" title="Notes">📝</a>
+        <a href="{% url 'interactions:task_chat' task.uuid %}?from=freelancer" title="Chat">💬</a>
         <a href="#" title="Edit Task" onclick="openEditTaskModal()">✏️</a>
         <!-- <a href="#" title="Share">🔗</a> -->
     </div>
@@ -299,7 +299,19 @@ a:hover {
     <div class="meta-stacked">
         <div><strong>Status:</strong> <span class="badge">{{ task.get_status_display }}</span></div>
         <div><strong>Due Date:</strong> {{ task.deadline }}</div>
-        <div><strong>Client:</strong> {{ task.client.username|default:"N/A" }}</div>
+        <!-- <div><strong>Client:</strong> {{ task.client.username|default:"N/A" }}</div> -->
+        <div>
+            <strong>Client:</strong>
+            <a href="javascript:void(0);" onclick="openClientModal()" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#4f46e5;">
+                {{ task.client.get_full_name|default:task.client.username }}
+                {% if task.client.profile_photo %}
+                  <img src="{{ task.client.profile_photo.url }}" alt="Client" style="width:28px;height:28px;border-radius:50%;object-fit:cover">
+                {% else %}
+                  <img src="{% static 'images/default_avatar.png' %}" alt="Client" style="width:28px;height:28px;border-radius:50%;object-fit:cover">
+                {% endif %}
+            </a>
+        </div>
+          
         <div><strong>Created:</strong> {{ task.created_at|date:"d M Y" }}</div>
     </div>
 
@@ -336,7 +348,7 @@ a:hover {
     <div id="editTaskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
         <div style="background:#fff; max-width:500px; margin:60px auto; padding:24px; border-radius:10px;">
         <h3>Edit Task</h3>
-        <form id="editTaskForm" method="post" action="{% url 'tasks:edit_task' task.id %}">
+        <form id="editTaskForm" method="post" action="{% url 'tasks:edit_task' task.uuid %}">
             {% csrf_token %}
             <label>Title</label>
             <input type="text" name="title" value="{{ task.title }}" style="width:100%; padding:8px; margin:8px 0;" required>
@@ -390,7 +402,36 @@ a:hover {
         {% endif %}
     </div>
     
-    
+
+    <!-- Client Profile Modal -->
+    <div id="clientProfileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px; border-radius:10px; max-width:500px; width:90%; position:relative; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        <button onclick="closeClientModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">×</button>
+        <h3 style="margin-bottom:16px;">Client Profile</h3>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+            {% if task.client.profile_photo %}
+            <img src="{{ task.client.profile_photo.url }}" alt="Client" style="width:64px;height:64px;border-radius:50%;object-fit:cover">
+            {% else %}
+            <img src="{% static 'images/default_avatar.png' %}" alt="Client" style="width:64px;height:64px;border-radius:50%;object-fit:cover">
+            {% endif %}
+            <div>
+            <strong style="font-size:16px;">{{ task.client.get_full_name|default:task.client.username }}</strong><br>
+            <!-- <small style="color:#666;">{{ task.client.role_summary }}</small> -->
+            </div>
+        </div>
+        <div style="font-size:14px;color:#374151; line-height:1.7;">
+            {% if task.client.bio %}<p><strong>Bio:</strong> {{ task.client.bio }}</p>{% endif %}
+            {% if task.client.email %}<p><strong>Email:</strong> {{ task.client.email }}</p>{% endif %}
+            {% if task.client.phone_number %}<p><strong>Phone:</strong> {{ task.client.phone_number }}</p>{% endif %}
+            {% if task.client.location %}<p><strong>Location:</strong> {{ task.client.location }}</p>{% endif %}
+            {% if task.client.website %}<p><strong>Website:</strong> <a href="{{ task.client.website }}" target="_blank">{{ task.client.website }}</a></p>{% endif %}
+            {% if task.client.linkedin_url %}<p><strong>LinkedIn:</strong> <a href="{{ task.client.linkedin_url }}" target="_blank">View Profile</a></p>{% endif %}
+        </div>
+        </div>
+    </div>
+  
+      
+      
     
 
     <!-- Subtasks Table View -->
@@ -416,7 +457,7 @@ a:hover {
                     <td style="padding:10px;">{{ subtask.description|default:"—" }}</td>
                     <td style="padding:10px;">{{ subtask.due_date|date:"d M Y"|default:"—" }}</td>
                     <td style="padding:10px;">
-                        <form method="post" action="{% url 'tasks:update_subtask_status' task.id subtask.id %}">
+                        <form method="post" action="{% url 'tasks:update_subtask_status' task.uuid subtask.uuid %}">
                             {% csrf_token %}
                             <select name="status" onchange="this.form.submit()" style="padding:6px 12px; border-radius:6px; background:{{ subtask.status|get_status_color }};">
                                 <option value="pending" {% if subtask.status == 'pending' %}selected{% endif %}>⏳ Pending</option>
@@ -426,8 +467,8 @@ a:hover {
                         </form>
                     </td>
                     <td style="padding:10px;">
-                        <a href="#" onclick="openEditSubtaskModal('{{ subtask.id }}', '{{ subtask.title }}', '{{ subtask.description }}', '{{ subtask.due_date|date:"Y-m-d" }}')">✏️</a>
-                        <form method="post" action="{% url 'tasks:update_subtask_status' task.id subtask.id %}">
+                        <a href="#" onclick="openEditSubtaskModal('{{ subtask.uuid }}', '{{ subtask.title }}', '{{ subtask.description }}', '{{ subtask.due_date|date:'Y-m-d' }}')">✏️</a>
+                        <form method="post" action="{% url 'tasks:update_subtask_status' task.uuid subtask.uuid %}">
                             {% csrf_token %}
                             <input type="hidden" name="delete_subtask" value="true">
                             <button type="submit" style="background:none; border:none; color:red;">🗑️ Delete</button>
@@ -458,7 +499,7 @@ a:hover {
 <div id="subtaskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
     <div style="background:#fff; max-width:500px; margin:60px auto; padding:24px; border-radius:10px;">
         <h3>Add New Subtask</h3>
-        <form id="subtaskForm" method="post" action="{% url 'tasks:create_subtask' task.id %}">
+        <form id="subtaskForm" method="post" action="{% url 'tasks:create_subtask' task.uuid %}">
             {% csrf_token %}
             <div>
                 <label>Subtask Title</label>
@@ -497,7 +538,7 @@ a:hover {
 <div id="editSubtaskModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
     <div style="background:#fff; max-width:500px; margin:60px auto; padding:24px; border-radius:10px;">
         <h3>Edit Subtask</h3>
-        <form id="editSubtaskForm" method="post" action="{% url 'tasks:edit_subtask' task.id %}">
+        <form id="editSubtaskForm" method="post">
             {% csrf_token %}
             <input type="hidden" name="subtask_id" id="editSubtaskId">
             <label>Subtask Title</label>
@@ -560,11 +601,38 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function openEditSubtaskModal(id, title, description, dueDate) {
+    // Validate required fields
+    if (!id || id.trim() === "") {
+        console.warn("⚠️ subtask UUID is missing or invalid.");
+        alert("Something went wrong. Please try selecting a valid subtask.");
+        return;
+    }
+
+    // Defensive programming: fallback values
+    title = title || "";
+    description = description || "";
+    dueDate = dueDate || "";
+
+    // Populate the form
     document.getElementById('editSubtaskId').value = id;
     document.getElementById('editSubtaskTitle').value = title;
     document.getElementById('editSubtaskDescription').value = description;
     document.getElementById('editSubtaskDueDate').value = dueDate;
+
+    // Dynamically set form action
+    const taskUUID = "{{ task.uuid }}";
+    const form = document.getElementById("editSubtaskForm");
+
+    if (form) {
+        form.action = `/tasks/${taskUUID}/subtasks/${id}/edit/`;
+    } else {
+        console.error("Form with ID 'editSubtaskForm' not found.");
+        return;
+    }
+
+    // Show the modal
     document.getElementById('editSubtaskModal').style.display = 'block';
+
 }
 
 function closeEditSubtaskModal() {
@@ -608,6 +676,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+function openClientModal() {
+  document.getElementById('clientProfileModal').style.display = 'flex';
+}
+
+function closeClientModal() {
+  document.getElementById('clientProfileModal').style.display = 'none';
+}
+
 
 </script>
 {% endblock %}

@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from Accounts.models import CustomUser
 from Coresystem.models import AuthTokens
+import uuid
 
 # Create your models here.
 
@@ -13,6 +14,7 @@ class Task(models.Model):
         ('completed', 'Completed'),  
     ]
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
     deadline = models.DateField()
@@ -28,6 +30,7 @@ class SubTask(models.Model):
         ('in_progress', 'In Progress'),
         ('completed', 'Completed'), 
     ]
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='subtasks')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True,null=True)

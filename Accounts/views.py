@@ -31,7 +31,7 @@ from django.core.mail import send_mail
 
 
 # Create your views here.
-@method_decorator(login_required(login_url='/accounts/login/'), name='dispatch')
+@method_decorator(login_required(login_url='/login/'), name='dispatch')
 class UserDashboard(View):
     def get(self, request):
         user = request.user
@@ -99,13 +99,13 @@ class UserDashboard(View):
         }
         return render(request, 'Accounts/dashboard.html', context)
 
-@method_decorator(login_required(login_url='/accounts/login/'), name='dispatch')
+@method_decorator(login_required(login_url='/login/'), name='dispatch')
 class ClientDashboard(View):
     def get(self, request):
         context = {'user': request.user}
         return render(request, 'Accounts/client.html', context)
 
-@method_decorator(login_required(login_url='/accounts/login/'), name='dispatch')
+@method_decorator(login_required(login_url='/login/'), name='dispatch')
 class FreelancerDashboard(View):
     def get(self, request):
         context = {'user': request.user}
@@ -142,7 +142,7 @@ class RegisterView(View):
         if next_url:
             print("comes under the next url found in register")
             return redirect(next_url)
-        return redirect("/accounts/dashboard/")
+        return redirect("/dashboard/")
         # return redirect(reverse('dashboard', kwargs={'username': user.username}))
 
 
@@ -180,7 +180,7 @@ class LoginView(View):
             if next_url:
                 print("comes under the next url found in login")
                 return redirect(next_url)
-            return redirect("/accounts/dashboard/")
+            return redirect("/dashboard/")
         else:
             print("comes under the invalid username or password")
             return render(request, 'Accounts/login.html', {'error': 'Invalid username or password.'})
@@ -188,7 +188,7 @@ class LoginView(View):
 class LogoutView(View):
     def get(self, request):
         logout(request)
-        return redirect("/accounts/login/")
+        return redirect("/login/")
 
 
 @method_decorator(login_required, name='dispatch')
@@ -262,18 +262,19 @@ class ProfileView(View):
         # Save the updated user information
         try:
             user.save()
+            Activity.objects.create(
+                user=request.user,
+                message=f"You updated your profile successfully"
+            )
+
+            # return redirect('accounts:profile')
             # messages.success(request, 'Profile updated successfully.')
             return JsonResponse({'success': True})
         except Exception as e:
             # messages.error(request, f'An error occurred while updating your profile: {str(e)}')
             return JsonResponse({'success': False, 'error': "An error occurred while updating your profile"})
 
-        Activity.objects.create(
-            user=request.user,
-            message=f"You updated your profile successfully"
-        )
-
-        return redirect('accounts:profile')
+        
 
 
 
@@ -331,7 +332,7 @@ class ResetPasswordView(View):
             if default_token_generator.check_token(user, token):
                 user.password = make_password(password)
                 user.save()
-                return redirect('/accounts/login/')
+                return redirect('/login/')
         except Exception:
             pass
 

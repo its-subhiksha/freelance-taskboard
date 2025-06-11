@@ -164,9 +164,10 @@
           taskBox.classList.add('task-box');
 
           // Create dynamic link based on role
+          const taskId = task.extendedProps.uuid;
           const taskUrl = task.extendedProps.role === 'Freelancer'
-            ? `/tasks/freelancer/taskdetail/${task.extendedProps.id}/`
-            : `/tasks/client/taskdetail/${task.extendedProps.id}/`;
+            ? `/tasks/freelancer/${taskId}/`
+            : `/tasks/client/${taskId}/`;
 
           taskBox.innerHTML = `
             <h4>

@@ -7,8 +7,8 @@ app_name = 'interactions'
 
 
 urlpatterns =  [
-    path('task/<int:task_id>/', views.task_chat_view, name='task_chat'),
-    path('tasks/<int:task_id>/notes/', views.NotesBoardView.as_view(), name='task_notes'),
+    path('task/<uuid:uuid>/', views.task_chat_view, name='task_chat'),
+    path('tasks/<uuid:uuid>/notes/', views.NotesBoardView.as_view(), name='task_notes'),
     path('notes/create/', views.CreateNoteView.as_view(), name='create_note'),
     path('notes/<int:pk>/autosave/', views.UpdateNoteView.as_view(), name='note_autosave'),
     path('notifications/', views.FetchNotifications.as_view(), name='fetch_notifications'),

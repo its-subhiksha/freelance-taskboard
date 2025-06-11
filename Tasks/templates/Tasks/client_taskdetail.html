@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Task Detail{% endblock %}
 {% block heading %}{{ task.title }}{% endblock %}
 
@@ -231,8 +232,8 @@ a:hover {
     </div>
     <!-- Back to My Tasks -->
     <div class="top-icons" style="position: absolute; top: 32px; right: 32px; display: flex; gap: 14px; font-size: 18px;">
-        <a href="{% url 'interactions:task_notes' task.id %}?from=client" title="Notes" style="text-decoration:none; color:inherit;">📝</a>
-        <a href="{% url 'interactions:task_chat' task.id %}?from=client" title="Chat" style="text-decoration:none; color:inherit;">💬</a>
+        <a href="{% url 'interactions:task_notes' task.uuid %}?from=client" title="Notes" style="text-decoration:none; color:inherit;">📝</a>
+        <a href="{% url 'interactions:task_chat' task.uuid %}?from=client" title="Chat" style="text-decoration:none; color:inherit;">💬</a>
     </div>
 
     <div class="task-title">{{ task.title }}</div>
@@ -241,6 +242,17 @@ a:hover {
         <div><strong>Status:</strong> <span class="badge">{{ task.get_status_display }}</span></div>
         <div><strong>Due Date:</strong> {{ task.deadline }}</div>
         <div><strong>Freelancer:</strong> {{ task.freelancer.username|default:"N/A" }}</div>
+        <div>
+            <strong>Freelancer:</strong>
+            <a href="javascript:void(0);" onclick="openFreelancerModal()" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#4f46e5;">
+                {{ task.freelancer.get_full_name|default:task.freelancer.username }}
+                {% if task.freelancer.profile_photo %}
+                  <img src="{{ task.freelancer.profile_photo.url }}" alt="Freelancer" style="width:28px;height:28px;border-radius:50%;object-fit:cover">
+                {% else %}
+                  <img src="{% static 'images/default_avatar.png' %}" alt="Freelancer" style="width:28px;height:28px;border-radius:50%;object-fit:cover">
+                {% endif %}
+            </a>
+        </div>
         <div><strong>Created:</strong> {{ task.created_at|date:"d M Y" }}</div>
     </div>
 
@@ -294,6 +306,33 @@ a:hover {
         {% endif %}
     </div>
 
+    <!-- Freelancer Profile Modal -->
+    <div id="freelancerProfileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#fff; padding:24px; border-radius:10px; max-width:500px; width:90%; position:relative; box-shadow:0 4px 20px rgba(0,0,0,0.2);">
+        <button onclick="closeFreelancerModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">×</button>
+        <h3 style="margin-bottom:16px;">Freelancer Profile</h3>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+            {% if task.freelancer.profile_photo %}
+            <img src="{{ task.freelancer.profile_photo.url }}" alt="Freelancer" style="width:64px;height:64px;border-radius:50%;object-fit:cover">
+            {% else %}
+            <img src="{% static 'images/default_avatar.png' %}" alt="Freelancer" style="width:64px;height:64px;border-radius:50%;object-fit:cover">
+            {% endif %}
+            <div>
+            <strong style="font-size:16px;">{{ task.freelancer.get_full_name|default:task.freelancer.username }}</strong><br>
+            <!-- <small style="color:#666;">{{ task.freelancer.role_summary }}</small> -->
+            </div>
+        </div>
+        <div style="font-size:14px;color:#374151; line-height:1.7;">
+            {% if task.freelancer.bio %}<p><strong>Bio:</strong> {{ task.freelancer.bio }}</p>{% endif %}
+            {% if task.freelancer.email %}<p><strong>Email:</strong> {{ task.freelancer.email }}</p>{% endif %}
+            {% if task.freelancer.phone_number %}<p><strong>Phone:</strong> {{ task.freelancer.phone_number }}</p>{% endif %}
+            {% if task.freelancer.location %}<p><strong>Location:</strong> {{ task.freelancer.location }}</p>{% endif %}
+            {% if task.freelancer.website %}<p><strong>Website:</strong> <a href="{{ task.freelancer.website }}" target="_blank">{{ task.freelancer.website }}</a></p>{% endif %}
+            {% if task.freelancer.linkedin_url %}<p><strong>LinkedIn:</strong> <a href="{{ task.freelancer.linkedin_url }}" target="_blank">View Profile</a></p>{% endif %}
+        </div>
+        </div>
+    </div>
+  
     
     <div id="revision" class="subtask-section" style="display:none;">
         {% if revision_requests %}
@@ -373,6 +412,15 @@ function openRevisionModal() {
 }
 function closeRevisionModal() {
     document.getElementById("revisionModal").style.display = "none";
+}
+
+
+function openFreelancerModal() {
+  document.getElementById('freelancerProfileModal').style.display = 'flex';
+}
+
+function closeFreelancerModal() {
+  document.getElementById('freelancerProfileModal').style.display = 'none';
 }
 </script>
 {% endblock %}

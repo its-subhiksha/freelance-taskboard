@@ -92,7 +92,7 @@
             <!-- Back to Task - pinned to top left -->
         <div style="margin-bottom: 20px;">
             {% if request.GET.from == 'freelancer' or task.freelancer == request.user %}
-                <a href="{% url 'tasks:task_detail' task.id %}" 
+                <a href="{% url 'tasks:task_detail' task.uuid %}" 
                 style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: flex; align-items: center;">
                     <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
                         <path d="M11 2 5 8l6 6"/>
@@ -100,7 +100,7 @@
                     Back to Task
                 </a>
             {% elif request.GET.from == 'client' or task.client == request.user %}
-                <a href="{% url 'tasks:client_taskdetail' task.id %}" 
+                <a href="{% url 'tasks:client_taskdetail' task.uuid %}" 
                 style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: flex; align-items: center;">
                     <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
                         <path d="M11 2 5 8l6 6"/>
@@ -113,13 +113,13 @@
     
         <form method="post" action="{% url 'interactions:create_note' %}?from={{ request.GET.from }}" style="margin-bottom: 16px;">
             {% csrf_token %}
-            <input type="hidden" name="task_id" value="{{ task.id }}">
+            <input type="hidden" name="task_uuid" value="{{ task.uuid }}">
             <button type="submit" class="btn-submit" style="width: 100%;">➕ Add Note</button>
         </form>
 
         {% for note in notes %}
         <div class="note-item {% if note.id == selected_note_id %}active{% endif %}">
-            <a href="{% url 'interactions:task_notes' task.id %}?note_id={{ note.id }}" style="text-decoration:none; color:inherit;">
+            <a href="{% url 'interactions:task_notes' task.uuid %}?note_id={{ note.id }}" style="text-decoration:none; color:inherit;">
                 <strong>{{ note.title|default:"Untitled" }}</strong>
                 <small>{{ note.created_at|date:"d M, Y" }}</small>
             </a>

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Assigned Tasks{% endblock %}
 {% block heading %}Assigned Tasks{% endblock %}
 
@@ -155,6 +155,36 @@
     background-color: #e9d5ff;
     box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
   }
+  .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: 40px;
+  color: #6b7280;
+}
+
+.empty-state h3 {
+  font-size: 20px;
+  margin-top: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.empty-state p {
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.empty-img {
+  width: 300px;
+  max-width: 100%;
+  margin-bottom: 12px;
+  opacity: 0.97;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
 </style>
 
 <div class="task-container">
@@ -203,11 +233,16 @@
       {% endif %} -->
 
       <div class="task-buttons">
-        <a href="{% url 'tasks:client_taskdetail' task.id %}" class="btn btn-primary">View Details</a>
+        <a href="{% url 'tasks:client_taskdetail' task.uuid %}" class="btn btn-primary">View Details</a>
       </div>
     </div>
     {% empty %}
-    <p>No tasks assigned to you.</p>
+      <div class="empty-state">
+        <img src="{% static 'images/no-client-tasks.png' %}" alt="No Tasks" class="empty-img">
+        <h3>No Tasks Assigned</h3>
+        <p>Assign a task to your freelancer to begin collaboration.</p>
+      </div>
+    
     {% endfor %}
   </div>
 </div>

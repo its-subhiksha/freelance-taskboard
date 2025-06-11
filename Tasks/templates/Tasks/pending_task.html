@@ -70,7 +70,7 @@
   }
 
   /* Status-Based Colors */
-  .task-card.in-progress {
+  /* .task-card.in-progress {
     border-left: 5px solid #fde68a;
   }
 
@@ -80,6 +80,10 @@
 
   .task-card.completed {
     border-left: 5px solid #bbf7d0;
+  } */
+
+  .task-card.awaiting {
+    border-left: 5px solid #978bb4;
   }
 
   .task-header {
@@ -100,7 +104,7 @@
     font-weight: 600;
   }
 
-  .task-card.in-progress .badge {
+  /* .task-card.in-progress .badge {
     background-color: #fef9c3;
     color: #92400e;
   }
@@ -113,6 +117,11 @@
   .task-card.completed .badge {
     background-color: #dcfce7;
     color: #065f46;
+  } */
+
+  .task-card.awaiting .badge {
+    background-color: #aaa0e76b;
+    color: #1e3a8a;
   }
 
   .task-meta {
@@ -195,8 +204,8 @@
 
 <div class="task-container">
   <div class="header">
-    <h2 style="font-size: 22px; font-weight: 600; margin: 0;">Active Tasks</h2>
-    <form method="get" class="filter-sort" style="display: flex; align-items: center; gap: 12px;">
+    <h2 style="font-size: 22px; font-weight: 600; margin: 0;">Pending Tasks</h2>
+    <!-- <form method="get" class="filter-sort" style="display: flex; align-items: center; gap: 12px;">
       <label for="status">Filter:</label>
       <select name="status" id="status" onchange="this.form.submit()" class="filter-dropdown">
         <option value="">All</option>
@@ -210,13 +219,13 @@
         <option value="">By Deadline</option>
         <option value="sooner" {% if sort_by == 'sooner' %}selected{% endif %}>Sooner</option>
         <option value="later" {% if sort_by == 'later' %}selected{% endif %}>Later</option>
-      </select>
+      </select> -->
     </form>
   </div>
 
   <div class="scroll-area">
     {% for task in tasks %}
-    <div class="task-card {% if task.status == 'in_progress' %}in-progress{% elif task.status == 'under_review' %}under-review{% elif task.status == 'completed' %}completed{% endif %}">
+    <div class="task-card {% if task.status == 'awaiting' %}awaiting{% endif %}">
       <div class="task-header">
         <h3>{{ task.title }}</h3>
         <span class="badge">{{ task.get_status_display }}</span>
@@ -236,9 +245,9 @@
       </div>
       {% endif %}
 
-      <div class="task-buttons">
+      <!-- <div class="task-buttons">
         <a href="{% url 'tasks:task_detail' task.uuid %}" class="btn btn-primary">View Details</a>
-      </div>
+      </div> -->
     </div>
     {% empty %}
       <div class="empty-state">

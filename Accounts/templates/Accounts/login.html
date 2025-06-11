@@ -103,20 +103,20 @@
       <div class="error">{{ error }}</div>
     {% endif %}
 
-    <form method="POST" action="/accounts/login/">
+    <form method="POST" action="/login/">
       {% csrf_token %}
       <input type="email" name="email" value="{{ initial_email }}" placeholder="Email" required />
       <input type="password" name="password" placeholder="Password" required />
       
       <div class="forgot-link">
-        <a href="/accounts/forgot-password/">Forgot Password?</a>
+        <a href="/forgot-password/">Forgot Password?</a>
       </div>
 
       <button type="submit">Login</button>
     </form>
 
     <div class="register-link">
-      New here? <a href="/accounts/register/">Create an account</a>
+      New here? <a href="/register/">Create an account</a>
     </div>
   </div>
 

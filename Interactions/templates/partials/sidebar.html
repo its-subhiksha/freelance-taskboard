@@ -29,6 +29,10 @@
         <i class="icon">👥</i>
         Members
       </a>
+      <a href="{% url 'tasks:pending_task' %}" class="nav-link submenu-link {% if request.resolver_match.url_name == 'pending_task' %}active{% endif %}">
+        <i class="icon">⌛</i>
+        Pending Task
+      </a>
     </div>
 
     <!-- Client Section -->
@@ -63,10 +67,10 @@
       <span style="color: #d1d5db; font-size: 14px;">Profile</span>
     </a>
 
-    <a href="{% url 'accounts:logout' %}" class="nav-link logout-link">
+    <!-- <a href="{% url 'accounts:logout' %}" class="nav-link logout-link">
       <i class="icon">🚪</i>
       Sign Out
-    </a>
+    </a> -->
   </div>
 </aside>
 

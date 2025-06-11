@@ -94,14 +94,14 @@
 <div class="chat-container">
     <div style="margin-bottom: 12px;">
         {% if request.GET.from == 'freelancer' %}
-            <a href="{% url 'tasks:task_detail' task.id %}" style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">
+            <a href="{% url 'tasks:task_detail' task.uuid %}" style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">
                 <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
                     <path d="M11 2 5 8l6 6"/>
                 </svg>
                 Back to Task
             </a>
         {% elif request.GET.from == 'client' %}
-            <a href="{% url 'tasks:client_taskdetail' task.id %}" style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">
+            <a href="{% url 'tasks:client_taskdetail' task.uuid %}" style="text-decoration: none; color: #6b46c1; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center;">
                 <svg width="16" height="16" fill="#6b46c1" viewBox="0 0 16 16" style="margin-right: 6px;">
                     <path d="M11 2 5 8l6 6"/>
                 </svg>

@@ -87,7 +87,7 @@
       <div class="error">{{ error }}</div>
     {% endif %}
 
-    <form method="POST" action="/accounts/register/">
+    <form method="POST" action="/register/">
       {% csrf_token %}
       <input type="text" name="username" placeholder="Username" required />
       <input type="email" name="email" value="{{ initial_email }}" placeholder="Email" required />
@@ -96,7 +96,7 @@
     </form>
 
     <div class="login-link">
-      Already have an account? <a href="/accounts/login/">Login here</a>
+      Already have an account? <a href="/login/">Login here</a>
     </div>
   </div>
 

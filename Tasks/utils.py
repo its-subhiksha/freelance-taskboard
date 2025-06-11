@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.conf import settings
 import os
 
-ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'gif']
+ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'gif','txt','doc','docx','csv','ppt','webp','tiff']
 
 
 def new_invitation(task, email, user):
@@ -31,7 +31,7 @@ def new_invitation(task, email, user):
         expires_on=expires_on
     )
 
-    invite_link = f"http://freelancetaskboard.com:8000/tasks/invite/accept?token={auth_token}&task_id={task.id}"
+    invite_link = f"http://freelancetaskboard.com:8000/tasks/invite/accept?token={auth_token}&task_uuid={task.uuid}"
     print(f"Invitation link: {invite_link}")
     return invite_link
 
@@ -50,7 +50,7 @@ def resend_invitation(invitation):
     invitation.expires_on = new_expiry
     invitation.save()
 
-    invite_link = f"http://freelancetaskboard.com:8000/tasks/invite/accept?token={auth_token_obj.token}&task_id={invitation.task.id}"
+    invite_link = f"http://freelancetaskboard.com:8000/tasks/invite/accept?token={auth_token_obj.token}&task_uuid={invitation.task.uuid}"
     print(f"Invitation link: {invite_link}")
     return invite_link
 
@@ -71,7 +71,7 @@ def reinvite_invitation(invitation):
     invitation.status = Invitation.InvitationStatus.PENDING
     invitation.save()
 
-    invite_link = f"http://freelancetaskboard.com:8000/tasks/invite/accept?token={updated_token}&task_id={invitation.task.id}"
+    invite_link = f"http://freelancetaskboard.com:8000/tasks/invite/accept?token={updated_token}&task_uuid={invitation.task.uuid}"
     print(f"Re-invited link: {invite_link}")
     return invite_link
 

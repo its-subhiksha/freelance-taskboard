@@ -10,13 +10,13 @@ import json
 from django.urls import reverse
 
 
-def task_chat_view(request, task_id):
+def task_chat_view(request, uuid):
     # Retrieve the task object; adjust as per your Task model
-    task = get_object_or_404(Task, id=task_id)
+    task = get_object_or_404(Task, uuid=uuid)
     
     # Fetch messages related to the task, ordered by timestamp
     try:
-        messages = Message.objects.filter(task_id=task_id).order_by('timestamp')
+        messages = Message.objects.filter(task=task).order_by('timestamp')
     except Exception as e:
         print("Chat fetch error:", e)
         messages = []
@@ -30,10 +30,10 @@ def task_chat_view(request, task_id):
     return render(request, 'Interactions/chat.html', context)
 
 
-@method_decorator(login_required(login_url="/accounts/login/"),name='dispatch')
+@method_decorator(login_required(login_url="/login/"),name='dispatch')
 class NotesBoardView(View):
-    def get(self, request, task_id):
-        task = get_object_or_404(Task, id=task_id)
+    def get(self, request, uuid):
+        task = get_object_or_404(Task, uuid=uuid)
         notes = UserNotes.objects.filter(task=task, user=request.user).order_by('-updated_at')
 
         # Check if a specific note is requested
@@ -49,15 +49,15 @@ class NotesBoardView(View):
             'note': note,
         })
 
-@method_decorator(login_required(login_url="/accounts/login/"),name='dispatch')
+@method_decorator(login_required(login_url="/login/"),name='dispatch')
 class CreateNoteView(View):
     def post(self, request):
-        task_id = request.POST.get('task_id')
+        task_uuid = request.POST.get('task_uuid')
         
-        if not task_id:
+        if not task_uuid:
             return JsonResponse({"error": "Task ID is required."}, status=400)
         
-        task = get_object_or_404(Task, id=task_id)
+        task = get_object_or_404(Task, uuid=task_uuid)
         note = UserNotes.objects.create(
             user=request.user,
             task=task,
@@ -66,9 +66,9 @@ class CreateNoteView(View):
         )
         from_page = request.GET.get('from')  # get the context
         # return redirect('interactions:task_notes', task_id=task.id)
-        return redirect(f"{reverse('interactions:task_notes', args=[task.id])}?from={from_page}")
+        return redirect(f"{reverse('interactions:task_notes', args=[task.uuid])}?from={from_page}")
 
-@method_decorator(login_required(login_url="/accounts/login/"),name='dispatch')
+@method_decorator(login_required(login_url="/login/"),name='dispatch')
 class UpdateNoteView(View):
     def post(self, request, pk):
         note = get_object_or_404(UserNotes, pk=pk, user=request.user)
@@ -101,13 +101,13 @@ class FetchNotifications(View):
     
 
 
-@method_decorator(login_required(login_url="/accounts/login/"), name='dispatch')
+@method_decorator(login_required(login_url="/login/"), name='dispatch')
 class CalendarPageView(View):
     def get(self, request):
         return render(request, 'Interactions/calendar.html')
 
 
-@method_decorator(login_required(login_url="/accounts/login/"), name='dispatch')
+@method_decorator(login_required(login_url="/login/"), name='dispatch')
 class CalendarEventsAPI(View):
     def get(self, request):
         user = request.user
@@ -124,11 +124,13 @@ class CalendarEventsAPI(View):
 
             events.append({
                 "id": task.id,
+                "uuid": str(task.uuid), 
                 "title": task.title,
                 "start": task.deadline.isoformat(),
                 "backgroundColor": color,
                 "extendedProps": {
                     "id": task.id,
+                    "uuid": str(task.uuid), 
                     "role": role,
                     "client": task.client.username if task.client else "Unassigned",
                     "freelancer": task.freelancer.username,

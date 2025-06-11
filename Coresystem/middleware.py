@@ -14,7 +14,7 @@ class DashboardAuthMiddleware:
         # Block unauthenticated access to any dashboard-related pages
         if 'dashboard' in request.path:
             if not request.user.is_authenticated:
-                return redirect('/accounts/login/')
+                return redirect('/login/')
         
         # Prefill email if user is visiting an invitation link
         if '/accept' in request.path_info and 'task_id' in request.GET:

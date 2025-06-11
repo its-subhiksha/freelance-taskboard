@@ -18,9 +18,10 @@ from datetime import datetime
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.urls import reverse
 # Create your views here.
 
-@method_decorator(login_required(login_url="/accounts/login/"),name='dispatch')
+@method_decorator(login_required(login_url="/login/"),name='dispatch')
 class CreateTaskView(View):
     def get(self,request):
         return render(request, "Tasks/create_task.html")
@@ -34,6 +35,7 @@ class CreateTaskView(View):
 
         if not title or not description or not client_email:
             return JsonResponse({"error": "Please fill all the required fields."}, status=400)
+            
 
         try:
             result = is_valid_email.delay(client_email.lower())
@@ -102,7 +104,7 @@ class CreateTaskView(View):
                 actor=request.user,
                 verb="invited you to join his Project:",
                 target=task.title,
-                url=f"/tasks/client/taskdetail/{task.id}/"
+                url=reverse('tasks:client_taskdetail', kwargs={'uuid': task.uuid})
             )
         Activity.objects.create(
             user=request.user,
@@ -119,17 +121,22 @@ class InviteMember(View):
     def post(self, request):
         email = request.POST.get("email")
         print("email",email)
-        task_id = request.POST.get("task_id")
-        print("task_id",task_id)
+        # task_id = request.POST.get("task_id")
+        # print("task_id",task_id)
+
+        task_uuid = request.POST.get("task_uuid")
+        print("task_uuid",task_uuid)
+
+
         status = request.POST.get("status")
         print("status",status)
 
-        if not email or not task_id or not status:
+        if not email or not task_uuid or not status:
             print("comes under the missing required fields")
             return JsonResponse({"message": "Missing required fields"}, status=400)
 
         # Get the task
-        task = get_object_or_404(Task, id=task_id)
+        task = get_object_or_404(Task, uuid=task_uuid)
 
         try:
             if status == "New":
@@ -193,12 +200,12 @@ class InviteMember(View):
                 actor=request.user,
                 verb="invited you to join his Project:",
                 target=task.title,
-                url=f"/tasks/client/taskdetail/{task.id}/"
+                url=reverse('tasks:client_taskdetail', kwargs={'uuid': task.uuid}),
             )
 
             Activity.objects.create(
                 user=request.user,
-                message=f"You created a task '{title}' and invited {client_email}"
+                message=f"You created a task '{task.title}' and invited {task.client_email}"
             )
 
 
@@ -217,12 +224,12 @@ class InviteMember(View):
                 actor=request.user,
                 verb="invited you to join his Project:",
                 target=task.title,
-                url=f"/tasks/client/taskdetail/{task.id}/"
+                url=reverse('tasks:client_taskdetail', kwargs={'uuid': task.uuid}),
             )
 
             Activity.objects.create(
                 user=request.user,
-                message=f"You created a task '{title}' and invited {client_email}"
+                message=f"You created a task '{task.title}' and invited {task.client_email}"
             )
 
         return redirect('tasks:members') 
@@ -231,10 +238,11 @@ class AcceptInvitation(View):
     def get(self, request):
         token_str = request.GET.get('token')
         print("token_str",token_str)
-        task_id = request.GET.get('task_id')
-        print("task_id",task_id)
+        task_uuid = request.GET.get('task_uuid')
+        # task_id = request.GET.get('task_id')
+        print("task_id",task_uuid)
 
-        if not token_str or not task_id:
+        if not token_str or not task_uuid:
             return JsonResponse({"message": "Invalid invitation link."}, status=400)
 
         # Validate the token
@@ -265,7 +273,7 @@ class AcceptInvitation(View):
         invitation.status = Invitation.InvitationStatus.ACCEPTED
         invitation.save()
 
-        task = get_object_or_404(Task, id=task_id)
+        task = get_object_or_404(Task, uuid=task_uuid)
         task.status = 'in_progress'
 
 
@@ -293,7 +301,7 @@ class AcceptInvitation(View):
             actor=task.client,         # the client accepting the invite
             verb="accepted your invitation",
             target=task.title,
-            url=f"/tasks/client/taskdetail/{task.id}/"
+            url=reverse('tasks:client_taskdetail', kwargs={'uuid': task.uuid})
         )
 
         Activity.objects.create(
@@ -431,12 +439,51 @@ class MyTask(View):
         }
         return render(request, 'Tasks/my_task.html', context)
 
+class PendingTask(View):
+    def get(self, request):
+        user = request.user
+        tasks = Task.objects.filter(freelancer=user,status='awaiting').order_by('-created_at')
+
+        # VALID_STATUSES = ['awaiting']
+
+        # # Filtering
+        # status_filter = request.GET.get('status')
+        # print("status_filter",status_filter)
+        # if status_filter:
+        #     tasks = tasks.filter(status=status_filter)
+
+        # if status_filter and status_filter not in VALID_STATUSES:
+        #     return JsonResponse({"message": "Invalid status filter."}, status=400)
+
+        # Sorting
+        # sort_by = request.GET.get('sort')
+        # print("sort_by",sort_by)
+        # if sort_by == 'sooner':
+        #     print("comes under the sooner")
+        #     tasks = tasks.order_by('deadline')
+        # elif sort_by == 'later':
+        #     print("comes under the later")
+        #     tasks = tasks.order_by('deadline')
+        # elif sort_by and sort_by not in ['sooner', 'later']:
+        #     print("Invalid sort option. Ignoring.")
+
+        if not tasks.exists():
+            print("No tasks found for user.")
+
+        context = {
+            'tasks': tasks,
+            # 'status_filter': status_filter,
+            # 'sort_by': sort_by,
+        }
+        return render(request, 'Tasks/pending_task.html', context)
+
+
         
 @method_decorator(login_required,name='dispatch')
 class TaskDetail(View):
-    def get(self, request,task_id):
+    def get(self, request, uuid):
 
-        task = get_object_or_404(Task, id=task_id,freelancer=request.user)
+        task = get_object_or_404(Task, uuid=uuid,freelancer=request.user)
         task_messages = Message.objects.filter(task=task).order_by('timestamp')
         attachments = task.attachements.all() if hasattr(task, 'attachements') else []
         revision_requests = task.revision_requests.all().order_by('-created_at') if hasattr(task, 'revision_requests') else []
@@ -450,8 +497,8 @@ class TaskDetail(View):
 
         return render(request, "Tasks/task_detail.html", context)
     
-    def post(self, request, task_id):
-        task = get_object_or_404(Task, id=task_id, freelancer=request.user)
+    def post(self, request, uuid):
+        task = get_object_or_404(Task, uuid=uuid, freelancer=request.user)
         print("task",task)
 
         if 'attachment' in request.FILES:
@@ -459,11 +506,12 @@ class TaskDetail(View):
             for file in files:
                 if is_allowed_file(file):
                     TaskAttachment.objects.create(task=task, file=file)
+                else:
+                    print(f"Unsupported file type skipped: {file.name}")
+                    messages.error(request,"Invalid file type")
+                    return redirect('tasks:task_detail', uuid=uuid)
         else:
-            print(f"Unsupported file type skipped: {file.name}")
-            
-            messages.error(request,"Invalid file type")
-            return redirect('tasks:task_detail')
+            print("No attachments provided.")
     
         try:
             attachment_id = int(request.POST.get('delete_attachment_id'))
@@ -509,11 +557,11 @@ class TaskDetail(View):
                 return redirect('tasks:task_detail')
                 # return JsonResponse({"message": "Invalid revision ID."}, status=404)
 
-        return redirect('tasks:task_detail',task_id = task.id)
+        return redirect('tasks:task_detail',uuid = uuid)
 
 @method_decorator(login_required, name='dispatch')
 class UpdateTaskView(View):
-    def post(self, request, task_id):
+    def post(self, request, uuid):
         title = request.POST.get("title")
         description = request.POST.get("description")
         deadline = request.POST.get("deadline")
@@ -537,7 +585,7 @@ class UpdateTaskView(View):
             # return JsonResponse({"message": "Deadline cannot be in the past."}, status=400)
 
         try:
-            task = get_object_or_404(Task, id=task_id, freelancer=request.user)
+            task = get_object_or_404(Task, uuid=uuid, freelancer=request.user)
 
             task.title = request.POST.get("title")
             task.description = request.POST.get("description")
@@ -564,8 +612,8 @@ class CreateSubTaskView(View):
     #     task = get_object_or_404(Task, id=task_id, freelancer=request.user)
     #     return render(request, "Tasks/subtask.html", {'task': task})
 
-    def post(self, request, task_id):
-        task = get_object_or_404(Task, id=task_id, freelancer=request.user)
+    def post(self, request, task_uuid):
+        task = get_object_or_404(Task, uuid=task_uuid, freelancer=request.user)
         title = request.POST.get('title')
         print("title",title)
         description = request.POST.get('description')
@@ -602,7 +650,7 @@ class CreateSubTaskView(View):
             if subTask:
 
                 create_notification(
-                    recipient=client,
+                    recipient=task.client,
                     actor=request.user,
                     verb=f"Has created a New Subtask Under the {task.title} Project ",
                     target=task.title,
@@ -624,13 +672,13 @@ class CreateSubTaskView(View):
         return JsonResponse({'success': True})
     
 class UpdateSubTaskStatusView(View):
-    def post(self, request, task_id, subtask_id):
-        task = get_object_or_404(Task, id=task_id, freelancer=request.user)
-        subtask = get_object_or_404(SubTask, id=subtask_id, task=task)
+    def post(self, request, task_uuid, subtask_uuid):
+        task = get_object_or_404(Task, uuid=task_uuid, freelancer=request.user)
+        subtask = get_object_or_404(SubTask, uuid=subtask_uuid, task=task)
         # Check if the request is to delete the subtask
         if 'delete_subtask' in request.POST:
             subtask.delete()  # Delete the subtask
-            return redirect('tasks:task_detail', task_id=task_id)
+            return redirect('tasks:task_detail', uuid=task_uuid)
 
         # Otherwise, update the status
         new_status = request.POST.get('status')
@@ -643,7 +691,7 @@ class UpdateSubTaskStatusView(View):
             subtask.save()
 
             create_notification(
-                    recipient=client,
+                    recipient=task.client,
                     actor=request.user,
                     verb=f"Has Updated the Subtask Status Under the {task.title} Project ",
                     target=task.title,
@@ -660,60 +708,53 @@ class UpdateSubTaskStatusView(View):
             # return JsonResponse({"message": "Could not update subtask."}, status=500)
         
         # return redirect('tasks:task_detail', task_id=task_id)
-        return JsonResponse({'success': True})
+        # return JsonResponse({'success': True})
+        return redirect('tasks:task_detail', uuid=task_uuid)
 
 class UpdateSubTaskView(View):
-    def post(self, request, task_id):
+    def post(self, request, task_uuid, subtask_uuid):
         title = request.POST.get("title")
         description = request.POST.get("description")
         due_date = request.POST.get("due_date")
 
         if not title or not description or not due_date:
-            # messages.error(request,"All fields are required")
             return JsonResponse({'success': False, 'error': "All fields are required."})
-            # return JsonResponse({"message": "All fields are required."}, status=400)
-        
+
         try:
             parsed_date = datetime.strptime(due_date, "%Y-%m-%d").date()
         except ValueError:
-            # messages.error(request,"Invalid due date format.")
             return JsonResponse({'success': False, 'error': "Invalid due date format"})
-            # return JsonResponse({"message": "Invalid due date format."}, status=400)
 
         if parsed_date < timezone.now().date():
-            # messages.error(request,"Due date cannot be in the past.")
             return JsonResponse({'success': False, 'error': "Due date cannot be in the past."})
-            # return JsonResponse({"message": "Due date cannot be in the past."}, status=400)
 
-
-        subtask_id = request.POST.get("subtask_id")
-        subtask = get_object_or_404(SubTask, id=subtask_id, task_id=task_id)
+        subtask = get_object_or_404(SubTask, uuid=subtask_uuid, task__uuid=task_uuid)
 
         try:
             subtask.title = title
             subtask.description = description
             subtask.due_date = parsed_date
             subtask.save()
-            
+
+            # Retrieve the client from the task
+            client = subtask.task.client  # Assuming the task has a client attribute
+
             if subtask:
                 create_notification(
                     recipient=client,
                     actor=request.user,
-                    verb=f"Has Updated Subtask Under the {task.title} Project ",
-                    target=task.title,
-                    url=f"/tasks/client/taskdetail/{task.id}/"
+                    verb=f"Has Updated Subtask Under the {subtask.task.title} Project ",
+                    target=subtask.task.title,
+                    url=f"/tasks/client/taskdetail/{subtask.task.id}/"
                 )
                 Activity.objects.create(
                     user=request.user,
-                    message=f"You have Updated the Subtask Under the  '{task.title}' Project"
+                    message=f"You have Updated the Subtask Under the '{subtask.task.title}' Project"
                 )
         except Exception as e:
             print(f"Failed to update subtask: {e}")
-            # messages.error(request,"Failed to update subtask")
-            return JsonResponse({'success': False, 'error': "Failed to update subtask.."})
-            # return JsonResponse({"message": "Failed to update subtask."}, status=500)
+            return JsonResponse({'success': False, 'error': "Failed to update subtask."})
 
-        # return redirect("tasks:task_detail", task_id=task_id)
         return JsonResponse({'success': True})
 
 @method_decorator(login_required, name='dispatch')
@@ -759,9 +800,9 @@ class ClientTasksView(View):
 
 @method_decorator(login_required,name='dispatch')
 class ClientTaskDetail(View):
-    def get(self, request,task_id):
+    def get(self, request,uuid):
 
-        task = get_object_or_404(Task, id=task_id,client=request.user)
+        task = get_object_or_404(Task, uuid=uuid,client=request.user)
         task_messages = Message.objects.filter(task=task).order_by('timestamp')
         attachments = [
             {
@@ -781,11 +822,14 @@ class ClientTaskDetail(View):
 
         return render(request, "Tasks/client_taskdetail.html", context)
     
-    def post(self, request, task_id):
-        task = get_object_or_404(Task, id=task_id, client=request.user)
+    def post(self, request, uuid):
+        task = get_object_or_404(Task, uuid=uuid, client=request.user)
         print("task",task)
         action = request.POST.get('action')
         print("action",action)
+
+        revision_comment = request.POST.get('revision_comment', '').strip()
+        print("revision_comment",revision_comment)
 
         if not action or action not in ['approve', 'request_revision']:
             messages.error(request,"Invalid action")
@@ -796,8 +840,9 @@ class ClientTaskDetail(View):
 
             # return JsonResponse({"message": "Task is already approved."}, status=400)
         
-        if action == 'request_revision' and not revision_comment:
-            messages.error(request,"Revision comment required.")
+        if action == 'request_revision' and not revision_comment:  # Define revision_comment here
+            messages.error(request, "Please provide a revision comment.")
+            return redirect('tasks:client_taskdetail', uuid=task.uuid)
             # return JsonResponse({"message": "Revision comment required."}, status=400)
 
 
@@ -818,23 +863,20 @@ class ClientTaskDetail(View):
                     actor=task.client,
                     verb=f"Has Approved your {task.title} Project ",
                     target=task.title,
-                    url=f"/tasks/client/taskdetail/{task.id}/"
+                    url=f"/tasks/client/taskdetail/{task.uuid}/"
                 )
 
 
             messages.success(request, "Task approved successfully.")
-            return redirect('tasks:client_taskdetail', task_id=task.id)
+            return redirect('tasks:client_taskdetail', uuid=task.uuid)
 
         elif action == 'request_revision':
-            revision_comment = request.POST.get('revision_comment', '').strip()
-            if not revision_comment:
-                messages.error(request, "Please provide a revision comment.")
-                return redirect('tasks:client_taskdetail', task_id=task.id)
+
             # Save the revision comment to the database
             RevisionRequest.objects.create(task=task, comment=revision_comment,client=request.user,status='pending')
             task.status = 'in_progress'
             task.save()
-            Activity.objects.create(
+            Activity.objects.create( 
                 user=request.user,
                 message=f"You requested a revision for task '{task.title}'"
             )
@@ -848,15 +890,15 @@ class ClientTaskDetail(View):
                 actor=task.client,
                 verb=f"Has requested a Revision for the {task.title} Project ",
                 target=task.title,
-                url=f"/tasks/client/taskdetail/{task.id}/"
+                url=f"/tasks/client/taskdetail/{task.uuid}/"
             )
             
             messages.success(request, "Revision requested successfully.")
-            return redirect('tasks:client_taskdetail', task_id=task.id)
+            return redirect('tasks:client_taskdetail', uuid=task.uuid)
 
         # Handle unexpected actions
         # messages.error(request, "Invalid action.")
-        return redirect('tasks:client_taskdetail', task_id=task.id)
+        return redirect('tasks:client_taskdetail', uuid=task.uuid)
     
 class IncomingInvitation(View):
     def get(self, request):
@@ -894,7 +936,7 @@ class IncomingInvitation(View):
         )
         print("invitation",invitation)
         if invitation.task.client != request.user:
-            message.error(request,"You are not authorized to accept this invitation.")
+            messages.error(request,"You are not authorized to accept this invitation.")
             return JsonResponse({"message": "You are not authorized to accept this invitation."}, status=403)
         
         print("invitation.task.client",invitation.task.client)
@@ -927,7 +969,7 @@ class IncomingInvitation(View):
             actor=request.user,
             verb="accepted your invitation to collaborate on",
             target=task.title,
-            url=f"/tasks/client/taskdetail/{task.id}/"
+            url=f"/tasks/client/taskdetail/{task.uuid}/"
         )
 
 
