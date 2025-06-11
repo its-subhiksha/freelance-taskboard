@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,10 +26,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1tuu39^b0%%of2m9k2k_1a!1kio23r%onz@i+#99j03z55dd*3'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # # ─── Environment Config 
 # ENVIRONMENT = os.getenv("ENVIRONMENT", "LOCAL")
@@ -44,7 +45,7 @@ DEBUG = True
 # DJANGO_SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # HTTP_PROTOCOL = os.getenv("HTTP_PROTOCOL", "http")
 
-ALLOWED_HOSTS = ['freelancetaskboard.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(',')
 
 # if ENVIRONMENT == "LOCAL":
 #     ALLOWED_HOSTS = ['localhost', '127.0.0.1', f'.{SUBDOMAIN_HOST}', '*']
@@ -75,8 +76,6 @@ INSTALLED_APPS = [
     'Accounts.apps.AccountsConfig',
     'Tasks.apps.TasksConfig',
     'Billing.apps.BillingConfig',
-    'Scheduling.apps.SchedulingConfig',
-    'Notifications.apps.NotificationsConfig',
     'Coresystem.apps.CoresystemConfig',
     'Interactions.apps.InteractionsConfig',
 ]
@@ -133,8 +132,8 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
 
 INVALID_DOMAIN_CSV = os.path.join(BASE_DIR, "Coresystem/securityfiles/temp_domains.csv")
@@ -168,21 +167,22 @@ WSGI_APPLICATION = 'freelance_taskboard.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'freelance-taskboard',
-        'USER': 'postgres',
-        'PASSWORD':'1234',
-        'HOST':'localhost'
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # Or your SMTP provider
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your_email@gmail.com'
-EMAIL_HOST_PASSWORD = 'your_app_password_or_password'
-DEFAULT_FROM_EMAIL = 'Your Project <your_email@gmail.com>'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 
 
 # Password validation

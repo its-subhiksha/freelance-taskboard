@@ -24,8 +24,6 @@ urlpatterns = [
     path('', include('Accounts.urls')),
     path('tasks/', include('Tasks.urls')),
     path('billing/', include('Billing.urls')),
-    path('scheduling/', include('Scheduling.urls')),
-    path('notifications/', include('Notifications.urls')),
     path('interactions/',include('Interactions.urls')),
 ]
 
